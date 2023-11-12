@@ -24,6 +24,9 @@ class Tile:
   def getAfter(self):
     return self.after
   
+  def isPlayable(self):
+    return self.after+self.before > 1
+  
   def setOrientation(self, orientation):
     self.orientation = orientation
 
