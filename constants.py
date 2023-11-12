@@ -1,3 +1,7 @@
+class Orientation:
+  HORIZONTAL = "horizontal"
+  VERTICAL = "vertical"
+
 TILES = {
   "+": {
     "frequency": 11,
