@@ -2,17 +2,17 @@ from tile import Tile
 
 class Player:
   def __init__(self):
-    self.tiles = []
+    self.rack = []
     self.points = 0
 
-  def getTiles(self):
-    return self.tiles
+  def getRack(self):
+    return self.rack
   
   def getPoints(self):
     return self.points
-  
+
   def drawTile(self, tile):
-    self.tiles.append(tile)
+    self.rack.append(tile)
 
   def addPoints(self, points):
     self.points += points

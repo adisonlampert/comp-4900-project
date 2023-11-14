@@ -127,10 +127,6 @@ TILES = {
     "frequency": 1,
     "points": 2
   },
-  "*": {
-    "frequency": 3,
-    "points": 0
-  },
 }
 
 MULTIPLIERS = {
