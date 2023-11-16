@@ -1,6 +1,7 @@
 from player import Player
 from itertools import combinations, permutations
 from constants import Orientation
+from tile import Tile
 
 class SimplifiedPlayer(Player):
   def __init__(self):
@@ -26,7 +27,7 @@ class SimplifiedPlayer(Player):
         for i in range(1, len(play_space) - 1):
 
           temp_list = play_space.copy()
-          temp_list[i] = "="
+          temp_list[i] = Tile("=", 0)
 
           for length in range(3, len(play_space) + 1):
               for start in range(len(play_space) - length + 1):
@@ -83,7 +84,7 @@ class SimplifiedPlayer(Player):
     playSpace = []
     for i in range(tile.getBefore()):
       playSpace.append(None)
-    playSpace.append(tile.getValue())
+    playSpace.append(tile)
     for i in range(tile.getAfter()):
       playSpace.append(None)
     return playSpace
