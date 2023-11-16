@@ -45,27 +45,27 @@ class SimplifiedPlayer(Player):
                       if tt and eq:
                         break
                     
-                    if not eq or not tt or sliced_list[0].getValue() == "=" or sliced_list[-1].getValue() == "=":
-                      break
+                  if not eq or not tt or (sliced_list[0] != None and sliced_list[0].getValue() == "=") or (sliced_list[-1] != None and sliced_list[-1].getValue() == "="):
+                    break
 
-                    # find all indices to permute over
-                    none_indices = [index for index, value in enumerate(sliced_list) if value is None]
-                    for r in range(1, len(self.rack) + 1):
-                        for comb in combinations(self.rack, r):
-                            for perm in permutations(comb, r):
-                                temp_sliced_list = sliced_list.copy()
-                                for idx, val in zip(none_indices, perm):
-                                    temp_sliced_list[idx] = val
-                                # exclude any equations that have None in between two non-None values
-                                if all(temp_sliced_list.index(None) in [0, len(temp_sliced_list) - 1] for _ in range(temp_sliced_list.count(None))):
-                                  temp_score = 0
-                                  for j in range(len(temp_sliced_list)):
-                                      if temp_sliced_list[j] is not None:
-                                          temp_score += temp_sliced_list[j].getPoints()
-                                  if temp_score > highest_score:
-                                      if super().validatePlay(temp_sliced_list):
-                                        highest_score = temp_score
-                                        highest_equation = temp_sliced_list
+                  # find all indices to permute over
+                  none_indices = [index for index, value in enumerate(sliced_list) if value is None]
+                  for r in range(1, len(self.rack) + 1):
+                      for comb in combinations(self.rack, r):
+                          for perm in permutations(comb, r):
+                              temp_sliced_list = sliced_list.copy()
+                              for idx, val in zip(none_indices, perm):
+                                  temp_sliced_list[idx] = val
+                              # exclude any equations that have None in between two non-None values
+                              if all(temp_sliced_list.index(None) in [0, len(temp_sliced_list) - 1] for _ in range(temp_sliced_list.count(None))):
+                                temp_score = 0
+                                for j in range(len(temp_sliced_list)):
+                                    if temp_sliced_list[j] is not None:
+                                        temp_score += temp_sliced_list[j].getPoints()
+                                if temp_score > highest_score:
+                                    if super().validatePlay(temp_sliced_list):
+                                      highest_score = temp_score
+                                      highest_equation = temp_sliced_list
 
     for i in range(len(highest_equation)):
       if highest_equation[i] is not None:
