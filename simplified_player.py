@@ -45,7 +45,7 @@ class SimplifiedPlayer(Player):
                       if tt and eq:
                         break
                     
-                  if not eq or not tt or sliced_list[0].getValue() == "=" or sliced_list[-1].getValue() == "=":
+                  if not eq or not tt or (sliced_list[0] != None and sliced_list[0].getValue() == "=") or (sliced_list[-1] != None and sliced_list[-1].getValue() == "="):
                     break
 
                   # find all indices to permute over

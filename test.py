@@ -55,6 +55,9 @@ class Test:
     for _ in range(9):
       player.drawTile(game.dealTile())
     
+    for _ in range(9):
+      player.drawTile(game.dealTile())
+    
     x, y = random.randrange(19), random.randrange(19)
     orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
     
