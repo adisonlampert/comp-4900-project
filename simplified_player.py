@@ -1,26 +1,31 @@
 from player import Player
 from itertools import combinations, permutations
+from constants import Orientation
 
 class SimplifiedPlayer(Player):
   def __init__(self):
-    super(self)
+    super().__init__()
+    self.rack = []
 
   def play(self, board):
     highest_score = 0
     highest_equation = []
+    tile = None
 
-    for row in board:
-      for col in row:
+    for yPos in range(19):
+      for xPos in range(19): 
 
-        if col["tile"] == None or not col["tile"].isPlayable():
+        tile = board.getTile(xPos, yPos)
+
+        if tile is None or not tile.isPlayable():
           continue
 
-        tile = board.getTile(row, col)
+        tile_orientation = tile.getOrientation()
         play_space = self.generate_play_space(tile)
     
         for i in range(1, len(play_space) - 1):
 
-          temp_list = list.copy()
+          temp_list = play_space.copy()
           temp_list[i] = "="
 
           for length in range(3, len(play_space) + 1):
@@ -48,8 +53,31 @@ class SimplifiedPlayer(Player):
                                           highest_score = temp_score
                                           highest_equation = temp_sliced_list
 
-    # remove tiles from rack (first investigate data type of rack)
-    return highest_equation
+    for i in range(len(highest_equation)):
+      if highest_equation[i] is not None:
+        self.rack.remove(highest_equation[i])
+
+    # set tile orientation and coordinates
+    returnValue = []
+    tile_index = None
+    for i, current_tile in enumerate(highest_equation):
+        if current_tile is not None and current_tile.getOrientation() == tile_orientation:
+            tile_index = i
+            break
+
+    for i, current_tile in enumerate(highest_equation):
+        if current_tile is not None:
+            if tile_orientation == 'horizontal':
+                x_coord = xPos + (i - tile_index)
+                y_coord = yPos
+                current_tile.setOrientation(Orientation.VERTICAL)
+            else:
+                x_coord = xPos
+                y_coord = yPos + (i - tile_index)
+                current_tile.setOrientation(Orientation.HORIZONTAL)
+            returnValue.append((current_tile, (y_coord, x_coord)))
+
+    return returnValue
               
   def generate_play_space(self, tile):
     playSpace = []
