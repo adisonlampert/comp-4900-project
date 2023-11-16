@@ -34,13 +34,21 @@ class SimplifiedPlayer(Player):
                   end = start + length
                   sliced_list = temp_list[start:end]
                   
-                  eq, tt = False, False
+                  eq, tt, ds, dist = False, False, False, 0
                   for t in sliced_list:
                     if t != None:
                       if t.getValue() == "=":
                         eq = True
+                        if not ds:
+                          ds = True
+                        else:
+                          dist += 1
                       elif t.getValue() == tile.getValue():
                         tt = True
+                        if not ds:
+                          ds = True
+                        else:
+                          dist += 1
                       
                       if tt and eq:
                         break

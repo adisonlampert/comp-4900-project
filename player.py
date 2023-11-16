@@ -41,7 +41,7 @@ class Player:
 
     return []
   
-  def validatePlay(play):
+  def validatePlay(self, play):
     # Format fractions
     for i in range(len(play)):
       curr = play[i][0]["value"]
