@@ -2,17 +2,28 @@ from tile import Tile
 
 class Player:
   def __init__(self):
-    self.rack = []
+    self.operators = []
+    self.negatives = []
+    self.integers = []
+    self.fractions = []
     self.points = 0
 
   def getRack(self):
-    return self.rack
+    return self.operators + self.negatives + self.integers + self.fractions
   
   def getPoints(self):
     return self.points
 
   def drawTile(self, tile):
-    self.rack.append(tile)
+    match tile.getType():
+      case "operator":
+        self.operators.append(tile)
+      case "negative":
+        self.negatives.append(tile)
+      case "integer":
+        self.integers.append(tile)
+      case "fraction":
+        self.fractions.append(tile)
 
   def addPoints(self, points):
     self.points += points

@@ -52,26 +52,22 @@ class Test:
     for _ in range(9):
       player.drawTile(game.dealTile())
     
-    for _ in range(9):
-      player.drawTile(game.dealTile())
-    
-    for _ in range(9):
-      player.drawTile(game.dealTile())
-    
     x, y = random.randrange(19), random.randrange(19)
     orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
     
     tile = game.dealTile()
     tile.setOrientation(orientation)
     game.addPlayToBoard([(tile, (x, y))])
+    game.board.getTile(x,y).setBefore(3)
+    game.board.getTile(x,y).setAfter(3)
 
     play = player.play(game.board)
     
-    points = 0
-    for p in play:
-      print(f'{p[0].getValue()} ({p[1][0], p[1][1]})')
-      points += p[0].getPoints()
-    print(f'Points: {points}')
+    # points = 0
+    # for p in play:
+    #   print(f'{p[0].getValue()} ({p[1][0], p[1][1]})')
+    #   points += p[0].getPoints()
+    # print(f'Points: {points}')
 
     # for i in range(19):
     #   for j in range(19):

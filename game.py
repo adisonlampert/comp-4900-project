@@ -15,7 +15,7 @@ class Game:
 
     for tile in TILES:
       for _ in range(TILES[tile]["frequency"]):
-        self.tiles.append(Tile(tile, TILES[tile]["points"]))
+        self.tiles.append(Tile(tile, TILES[tile]["points"], TILES[tile]["type"]))
     random.shuffle(self.tiles) # Shuffles the tiles
 
     self.board = Board()
