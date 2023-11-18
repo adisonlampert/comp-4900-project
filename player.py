@@ -2,17 +2,28 @@ from tile import Tile
 
 class Player:
   def __init__(self):
-    self.tiles = []
+    self.operators = []
+    self.negatives = []
+    self.integers = []
+    self.fractions = []
     self.points = 0
 
-  def getTiles(self):
-    return self.tiles
+  def getRack(self):
+    return self.operators + self.negatives + self.integers + self.fractions
   
   def getPoints(self):
     return self.points
-  
+
   def drawTile(self, tile):
-    self.tiles.append(tile)
+    match tile.getType():
+      case "operator":
+        self.operators.append(tile)
+      case "negative":
+        self.negatives.append(tile)
+      case "integer":
+        self.integers.append(tile)
+      case "fraction":
+        self.fractions.append(tile)
 
   def addPoints(self, points):
     self.points += points
@@ -41,28 +52,30 @@ class Player:
 
     return []
   
-  def validatePlay(play):
+  def validatePlay(self, play):
     # Format fractions
+    eq = []
     for i in range(len(play)):
-      curr = play[i][0]["value"]
-      if "/" in curr and i != 0:
-        if play[i-1][0].isnumeric():
+      curr = play[i].getValue()
+      eq.append(curr)
+      if "/" in curr and i > 0:
+        if eq[i-1].isnumeric():
           for j in range(i-1,0,-1):
-            prev = play[j][0]["value"]
+            prev = eq[j]
             if not prev.isnumeric():
-              play[j+1][0]["value"] = "(" + play[j+1][0]["value"]
-              play[i][0]["value"] = "+" + curr + ")"
+              eq[j+1] = "(" + eq[j+1]
+              eq[i] = "+" + curr + ")"
               break
 
     # Split equation into expressions to be evaluated and compared for equality
-    equation = "".join([p[0]["value"] for p in play]).replace("×", "*").replace("÷","/")
+    equation = "".join([e for e in eq]).replace("×", "*").replace("÷","/")
 
     expressions = equation.split("=")
 
     # Get the value of the expressions to compare
     try:
-      leftExpression = eval(expressions[0])
-      rightExpression = eval(expressions[1])
+      leftExpression = float(eval(expressions[0]))
+      rightExpression = float(eval(expressions[1]))
     except:
       return False
     

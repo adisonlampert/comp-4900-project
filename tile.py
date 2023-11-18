@@ -1,5 +1,5 @@
 class Tile:
-  def __init__(self, value, points):
+  def __init__(self, value, points, type = None):
     '''
     For math symbols: +, -, ×, ÷
     '''
@@ -8,6 +8,7 @@ class Tile:
     self.orientation = None # The orientation of the equation it is part of
     self.before = None
     self.after = None
+    self.type = type
 
   def getValue(self):
     return self.value
@@ -23,6 +24,9 @@ class Tile:
   
   def getAfter(self):
     return self.after
+
+  def getType(self):
+    return self.type
   
   def isPlayable(self):
     return self.after+self.before > 1
@@ -35,3 +39,6 @@ class Tile:
 
   def setAfter(self, after):
     self.after = after
+  
+  def __str__(self):
+    return f'{self.value}'

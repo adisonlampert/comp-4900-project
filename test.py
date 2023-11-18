@@ -47,21 +47,36 @@ class Test:
           print(f'Value: {t.value} ({i}, {j})\n    Before: {t.before}\n    After: {t.after}\n    Orientation: {t.orientation}')
           
   def testPlay(self, player):
-    board = Board()
     game  = Game(player, player)
+
+    for _ in range(9):
+      player.drawTile(game.dealTile())
     
     x, y = random.randrange(19), random.randrange(19)
     orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
     
-    tile = game.dealTle()
+    tile = game.dealTile()
     tile.setOrientation(orientation)
-    game.addPlayToBoard((tile, (x, y)))
+    game.addPlayToBoard([(tile, (x, y))])
     
-    play = player.play(board)
+    x, y = random.randrange(19), random.randrange(19)
+    orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
+    
+    tile = game.dealTile()
+    tile.setOrientation(orientation)
+    game.addPlayToBoard([(tile, (x, y))])
+    
+    for i in range(19):
+      for j in range(19):
+        if game.board.getTile(j, i) != None:
+          tile = game.board.getTile(j,i)
+          print(f'Tile: {tile.getValue()} ({j}, {i}), Orientation: {tile.getOrientation()}')
+
+    play = player.play(game.board)
     
     points = 0
     for p in play:
-      print(f'{p[0].getValue()} ({p[1][0], p[1][1]})')
+      print(f'{p[0].getValue()} {p[1][0], p[1][1]}')
       points += p[0].getPoints()
     print(f'Points: {points}')
 
@@ -73,5 +88,5 @@ test = Test()
 # test.testBeforeAfter(g)
 
 # Tests that the player finds the best play
-# sp = SimplifiedPlayer()
-# test.testPlay(sp)
+sp = SimplifiedPlayer()
+test.testPlay(sp)
