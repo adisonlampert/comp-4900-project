@@ -12,104 +12,34 @@ class SimplifiedPlayer(Player):
     highestPlay = []
     tile = None
     
-    result = []
-    locations = []
+    options = []
 
     for yPos in range(19):
       for xPos in range(19): 
-
         tile = board.getTile(xPos, yPos)
 
         if tile is None or not tile.isPlayable():
           continue
         
-        placeSpace = self.generate_play_space(tile)
+        playSpace = self.generatePlaySpace(tile)
+        options += self.generateOptions(playSpace, tile, xPos, yPos)  
         
-        for i in range(1, len(placeSpace) - 1):
-          b_type = placeSpace[i-1].getType() if placeSpace[i-1] is not None else None
-          a_type = placeSpace[i+1].getType() if placeSpace[i+1] is not None else None
-
-          if placeSpace[i] is not None or (b_type == "operator" or b_type == "negative") or a_type == "operator":
-            continue
-
-          temp_list = placeSpace.copy()
-          temp_list[i] = Tile("=", 0, "equals")
-          possibleArrangements = []
-
-          space =  False
-          if tile.getType() == "operator":
-            space =  True
-            
-          if i < len(temp_list) - tile.getAfter():
-            for j in range(0, i):
-              sRange = len(temp_list) - tile.getAfter() if not space else len(temp_list) - tile.getAfter()+1
-              for k in range(sRange, len(temp_list)+1):
-                possibleArrangements.append(temp_list[j:k])
-          else:
-            eRange = len(temp_list) - tile.getAfter() if not space else len(temp_list) - tile.getAfter()-1
-            for j in range(0, eRange):
-              for k in range(i+2, len(temp_list)+1):
-                possibleArrangements.append(temp_list[j:k])
-          
-          for pa in possibleArrangements:
-            integers, fractions, negatives, operators = self.integers.copy(), self.fractions.copy(), self.negatives.copy(), self.operators.copy()
-            
-            none_indices = [i for i, x in enumerate(pa) if x is None]
-            
-            def generate_partial_equations(current_equation, remaining_none_indices, integers, fractions, negatives, operators):
-              if not remaining_none_indices:
-                # If there are no remaining None indices, check if the equation is valid
-                result.append(current_equation.copy())
-                locations.append((xPos, yPos))
-                return
-
-              # Get the next None index to fill
-              next_none_index = remaining_none_indices[0]
-
-              # Get playable tiles for the current position
-              before = current_equation[next_none_index-1] if next_none_index-1 >= 0 else None
-              after = current_equation[next_none_index+1] if next_none_index+1 < len(current_equation) else None
-              
-              if next_none_index == len(current_equation)-1:
-                playable_tiles = self.getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after, last=True)
-              else:
-                playable_tiles = self.getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after)
-              
-              if len(playable_tiles) == 0:
-                return
-
-              # Generate permutations for the remaining None indices
-              for tile in playable_tiles:
-                  current_equation[next_none_index] = tile
-                  if tile in integers:
-                    integers.remove(tile)
-                  elif tile in fractions:
-                    fractions.remove(tile)
-                  elif tile in negatives:
-                    negatives.remove(tile)
-                  else:
-                    operators.remove(tile)
-                  generate_partial_equations(current_equation, remaining_none_indices[1:], integers.copy(), fractions.copy(), negatives.copy(), operators.copy())
-                  current_equation[next_none_index] = None  # Backtrack
-
-            # Start the recursive generation process
-            generate_partial_equations(pa.copy(), none_indices, integers, fractions, negatives, operators)
-
     validEquations = []
-    for r in result:
-      if super().validatePlay(r):
-        validEquations.append(r)
+    for r in options:
+      for p in r["possibleEquations"]:
+        if super().validatePlay(p):
+          validEquations.append({"location": r["location"], "equation": p})
     
     highestPlay, highestPoints, coords = [], 0, (0,0)
-    for index, r in enumerate(validEquations): 
+    for eq in validEquations: 
       points = 0
-      for t in r:
+      for t in eq["equation"]:
         points += t.getPoints()
 
       if points > highestPoints:
         highestPoints = points
-        highestPlay = r
-        coords = locations[index]
+        highestPlay = eq["equation"]
+        coords = eq["location"]
 
     orientation, tileIndex = None, 0
     
@@ -125,38 +55,124 @@ class SimplifiedPlayer(Player):
           case "negative":
             self.negatives.remove(highestPlay[i])
       else:
-        orientation = highestPlay[i].getOrientation()
-        tileIndex = i
+        orientation, tileIndex = highestPlay[i].getOrientation(), i
 
     returnValue = []
 
-    for i, current_tile in enumerate(highestPlay): 
+    for i, currTile in enumerate(highestPlay): 
       if orientation == Orientation.HORIZONTAL:
-          current_tile.setOrientation(Orientation.VERTICAL)
+          currTile.setOrientation(Orientation.VERTICAL)
           xPos = coords[0]
-          yPos = coords[1]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)-coords[1]
+          yPos = coords[1]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[1]
       else:
-        current_tile.setOrientation(Orientation.HORIZONTAL)
+        currTile.setOrientation(Orientation.HORIZONTAL)
         yPos = coords[1]
-        xPos = coords[0]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)-coords[0]
-      returnValue.append((current_tile, (xPos, yPos)))
+        xPos = coords[0]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[0]
+      returnValue.append((currTile, (xPos, yPos)))
 
     return returnValue
               
-  def generate_play_space(self, tile=None):
+  def generatePlaySpace(self, tile=None):
     playSpace = []
     
     if tile == None:
       return [None for _ in range(10)]
     before = min(tile.getBefore(), 10)
-    for i in range(before):
+    for _ in range(before):
       playSpace.append(None)
     playSpace.append(tile)
     after = min(tile.getAfter(), 10)
-    for i in range(after):
+    for _ in range(after):
       playSpace.append(None)
     return playSpace
   
+  def generateOptions(self, playSpace, tile, xPos, yPos):
+    options = []
+    
+    for i in range(1, len(playSpace) - 1):
+      bType = playSpace[i-1].getType() if playSpace[i-1] is not None else None
+      aType = playSpace[i+1].getType() if playSpace[i+1] is not None else None
+
+      if playSpace[i] is not None or (bType == "operator" or bType == "negative") or aType == "operator":
+        continue
+
+      cPlaySpace = playSpace.copy()
+      cPlaySpace[i] = Tile("=", 0, "equals")
+      possibleArrangements = []
+
+      # Operators cannot be the first or last symbol of the equation so our range changes
+      space =  False
+      if tile.getType() == "operator":
+        space =  True
+        
+      if i < len(cPlaySpace) - tile.getAfter():
+        for j in range(0, i):
+          sRange = len(cPlaySpace) - tile.getAfter() if not space else len(cPlaySpace) - tile.getAfter()+1
+          for k in range(sRange, len(cPlaySpace)+1):
+            possibleArrangements.append(cPlaySpace[j:k])
+      else:
+        eRange = len(cPlaySpace) - tile.getAfter() if not space else len(cPlaySpace) - tile.getAfter()-1
+        for j in range(0, eRange):
+          for k in range(i+2, len(cPlaySpace)+1):
+            possibleArrangements.append(cPlaySpace[j:k])
+            
+      possibilities = self.generatePossibleEquations(possibleArrangements)
+      options.append({"location": (xPos, yPos), "possibleEquations": possibilities})
+      
+    return options
+    
+  def generatePossibleEquations(self, possibleArrangements):
+    possibilities = []
+    
+    for pa in possibleArrangements:      
+      integers, fractions, negatives, operators = self.integers.copy(), self.fractions.copy(), self.negatives.copy(), self.operators.copy()
+            
+      noneIndices = [i for i, x in enumerate(pa) if x is None]
+      
+      # Start the recursive generation process
+      self.generatePartialEquations(pa.copy(), noneIndices, integers, fractions, negatives, operators, possibilities)
+        
+    return possibilities
+  
+  def generatePartialEquations(self, currentEq, remainingNoneIndices, integers, fractions, negatives, operators, possibilities):
+    if not remainingNoneIndices:
+      # If there are no remaining None indices, check if the equation is valid
+      possibilities.append(currentEq.copy())
+      return
+
+    # Get the next None index to fill
+    nextNoneIndex = remainingNoneIndices[0]
+
+    # Get playable tiles for the current position
+    before = currentEq[nextNoneIndex-1] if nextNoneIndex-1 >= 0 else None
+    after = currentEq[nextNoneIndex+1] if nextNoneIndex+1 < len(currentEq) else None
+          
+    if nextNoneIndex == len(currentEq)-1:
+      playableTiles = self.getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after, last=True)
+    else:
+      playableTiles = self.getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after)
+          
+    # Return and don't add equation if there are no playable tiles
+    if len(playableTiles) == 0:
+      return
+    
+    for tile in playableTiles:
+      currentEq[nextNoneIndex] = tile
+      
+      # Remove tile we just played
+      if tile in integers:
+        integers.remove(tile)
+      elif tile in fractions:
+        fractions.remove(tile)
+      elif tile in negatives:
+        negatives.remove(tile)
+      else:
+        operators.remove(tile)
+      
+      # Generate permutations for the remaining None indices
+      self.generatePartialEquations(currentEq, remainingNoneIndices[1:], integers.copy(), fractions.copy(), negatives.copy(), operators.copy(), possibilities)
+      currentEq[nextNoneIndex] = None  # Backtrack
+
   def getPlayableTiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
     match (before.getType() if before is not None else None, after.getType() if after is not None else None):
       case ("operator", "operator"):
