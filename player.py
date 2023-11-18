@@ -54,26 +54,28 @@ class Player:
   
   def validatePlay(self, play):
     # Format fractions
+    eq = []
     for i in range(len(play)):
-      curr = play[i][0]["value"]
-      if "/" in curr and i != 0:
-        if play[i-1][0].isnumeric():
+      curr = play[i].getValue()
+      eq.append(curr)
+      if "/" in curr and i > 0:
+        if eq[i-1].isnumeric():
           for j in range(i-1,0,-1):
-            prev = play[j][0]["value"]
+            prev = eq[j]
             if not prev.isnumeric():
-              play[j+1][0]["value"] = "(" + play[j+1][0]["value"]
-              play[i][0]["value"] = "+" + curr + ")"
+              eq[j+1] = "(" + eq[j+1]
+              eq[i] = "+" + curr + ")"
               break
 
     # Split equation into expressions to be evaluated and compared for equality
-    equation = "".join([p[0]["value"] for p in play]).replace("×", "*").replace("÷","/")
+    equation = "".join([e for e in eq]).replace("×", "*").replace("÷","/")
 
     expressions = equation.split("=")
 
     # Get the value of the expressions to compare
     try:
-      leftExpression = eval(expressions[0])
-      rightExpression = eval(expressions[1])
+      leftExpression = float(eval(expressions[0]))
+      rightExpression = float(eval(expressions[1]))
     except:
       return False
     

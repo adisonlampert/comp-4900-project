@@ -58,22 +58,27 @@ class Test:
     tile = game.dealTile()
     tile.setOrientation(orientation)
     game.addPlayToBoard([(tile, (x, y))])
-    game.board.getTile(x,y).setBefore(3)
-    game.board.getTile(x,y).setAfter(3)
+    
+    x, y = random.randrange(19), random.randrange(19)
+    orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
+    
+    tile = game.dealTile()
+    tile.setOrientation(orientation)
+    game.addPlayToBoard([(tile, (x, y))])
+    
+    for i in range(19):
+      for j in range(19):
+        if game.board.getTile(j, i) != None:
+          tile = game.board.getTile(j,i)
+          print(f'Tile: {tile.getValue()} ({j}, {i}), Orientation: {tile.getOrientation()}')
 
     play = player.play(game.board)
     
-    # points = 0
-    # for p in play:
-    #   print(f'{p[0].getValue()} ({p[1][0], p[1][1]})')
-    #   points += p[0].getPoints()
-    # print(f'Points: {points}')
-
-    # for i in range(19):
-    #   for j in range(19):
-    #     if game.board.getTile(j, i) != None:
-    #       tile = game.board.getTile(j,i)
-    #       print(f'{tile.getValue()} ({j}, {i})')
+    points = 0
+    for p in play:
+      print(f'{p[0].getValue()} {p[1][0], p[1][1]}')
+      points += p[0].getPoints()
+    print(f'Points: {points}')
 
 test = Test()
 
