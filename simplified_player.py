@@ -1,3 +1,4 @@
+from copy import deepcopy
 import math
 from player import Player
 from itertools import combinations, permutations
@@ -44,18 +45,10 @@ class SimplifiedPlayer(Player):
     orientation, tileIndex = None, 0
     
     for i in range(len(highestPlay)):
-      if not highestPlay[i].getOrientation():
-        match highestPlay[i].getType():
-          case "integer":
-            self.integers.remove(highestPlay[i])
-          case "fraction":
-            self.fractions.remove(highestPlay[i])
-          case "operator":
-            self.operators.remove(highestPlay[i])
-          case "negative":
-            self.negatives.remove(highestPlay[i])
-      else:
+      if highestPlay[i].getOrientation():
         orientation, tileIndex = highestPlay[i].getOrientation(), i
+        
+    self.removePlayedTiles(highestPlay)
 
     returnValue = []
 
@@ -102,18 +95,18 @@ class SimplifiedPlayer(Player):
 
       # Operators cannot be the first or last symbol of the equation so our range changes
       space =  False
-      if tile.getType() == "operator":
+      if tile.getType() == "operator" or tile.getType() == "negative":
         space =  True
         
-      if i < len(cPlaySpace) - tile.getAfter():
+      if i < len(cPlaySpace) - min(10, tile.getAfter()):
         for j in range(0, i):
-          sRange = len(cPlaySpace) - tile.getAfter() if not space else len(cPlaySpace) - tile.getAfter()+1
-          for k in range(sRange, len(cPlaySpace)+1):
+          sRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())+1
+          for k in range(sRange, min(j+12, len(cPlaySpace)+1)):
             possibleArrangements.append(cPlaySpace[j:k])
       else:
-        eRange = len(cPlaySpace) - tile.getAfter() if not space else len(cPlaySpace) - tile.getAfter()-1
-        for j in range(0, eRange):
-          for k in range(i+2, len(cPlaySpace)+1):
+        # eRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())-1
+        for j in range(0, i):
+          for k in range(i+2, min(j+12, len(cPlaySpace)+1)):
             possibleArrangements.append(cPlaySpace[j:k])
             
       possibilities = self.generatePossibleEquations(possibleArrangements)
@@ -125,7 +118,7 @@ class SimplifiedPlayer(Player):
     possibilities = []
     
     for pa in possibleArrangements:      
-      integers, fractions, negatives, operators = self.integers.copy(), self.fractions.copy(), self.negatives.copy(), self.operators.copy()
+      integers, fractions, negatives, operators = deepcopy(self.integers), deepcopy(self.fractions), deepcopy(self.negatives), deepcopy(self.operators)
             
       noneIndices = [i for i, x in enumerate(pa) if x is None]
       
@@ -159,19 +152,75 @@ class SimplifiedPlayer(Player):
     for tile in playableTiles:
       currentEq[nextNoneIndex] = tile
       
-      # Remove tile we just played
-      if tile in integers:
-        integers.remove(tile)
-      elif tile in fractions:
-        fractions.remove(tile)
-      elif tile in negatives:
-        negatives.remove(tile)
-      else:
-        operators.remove(tile)
+      # Create new lists without the tile we just played
+      integers_copy = [t for t in integers if t != tile]
+      fractions_copy = [t for t in fractions if t != tile]
+      negatives_copy = [t for t in negatives if t != tile]
+      operators_copy = [t for t in operators if t != tile]
       
       # Generate permutations for the remaining None indices
-      self.generatePartialEquations(currentEq, remainingNoneIndices[1:], integers.copy(), fractions.copy(), negatives.copy(), operators.copy(), possibilities)
+      self.generatePartialEquations(currentEq, remainingNoneIndices[1:], integers_copy, fractions_copy,
+                                      negatives_copy, operators_copy, possibilities)
       currentEq[nextNoneIndex] = None  # Backtrack
+      
+  def firstPlay(self):
+    highestPlay = []
+        
+    playSpace = [None]*10
+    options = []
+    
+    for i in range(1, len(playSpace) - 1):
+      cPlaySpace = playSpace.copy()
+      cPlaySpace[i] = Tile("=", 0, "equals")
+      possibleArrangements = []
+        
+      for j in range(0, i):
+        for k in range(i+1, len(cPlaySpace)-1):
+          if len(cPlaySpace[j:k]) > 2:
+            possibleArrangements.append(cPlaySpace[j:k])
+            
+      options += self.generatePossibleEquations(possibleArrangements)
+        
+    highestPlay, highestPoints  = [], 0
+    for eq in options: 
+      points = 0
+      for t in eq:
+        points += t.getPoints()
+
+      if points > highestPoints:
+        if super().validatePlay(eq):
+          highestPlay = eq
+          highestPoints = points
+          highestPlay = eq
+        
+    self.removePlayedTiles(highestPlay)
+
+    returnValue = []
+
+    xVal = 9-math.floor(len(highestPlay)/2)
+    
+    for i, currTile in enumerate(highestPlay):
+      currTile.setOrientation(Orientation.HORIZONTAL)
+      yPos = 9
+      xPos = xVal
+      xVal +=1
+      returnValue.append((currTile, (xPos, yPos)))
+
+    return returnValue
+  
+  def removePlayedTiles(self, highestPlay):
+    def removeFirstMatchingTile(obj, arrayList):
+      try:
+        arrayIndex, itemIndex = next(
+            ((i, j) for i, array in enumerate(arrayList) for j, item in enumerate(array) if obj.getValue() == item.getValue())
+        )
+        del arrayList[arrayIndex][itemIndex]
+      except StopIteration:
+        pass  # No matching item found
+    
+    rack = [self.integers, self.fractions, self.operators, self.negatives]
+    for i in range(len(highestPlay)):
+      removeFirstMatchingTile(highestPlay[i], rack)
 
   def getPlayableTiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
     match (before.getType() if before is not None else None, after.getType() if after is not None else None):
@@ -237,7 +286,7 @@ class SimplifiedPlayer(Player):
       case ("equals", "negative"):
         return integers + fractions
       case ("equals", "integer"):
-        return integers +negatives
+        return integers + negatives
       case ("equals", "fraction"):
         return integers + negatives
       case ("equals", None):

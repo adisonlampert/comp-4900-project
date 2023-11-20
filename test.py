@@ -21,9 +21,8 @@ class Test:
     return play
 
   def testBeforeAfter(self, g):
-    for i in range(5):
-      play = self.generatePlay(g)
-      g.addPlayToBoard(play)
+    g.startGame()
+    g.playRound()
 
     format = []
     for i in range(19):
@@ -59,12 +58,12 @@ class Test:
     tile.setOrientation(orientation)
     game.addPlayToBoard([(tile, (x, y))])
     
-    x, y = random.randrange(19), random.randrange(19)
-    orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
+    # x, y = random.randrange(19), random.randrange(19)
+    # orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
     
-    tile = game.dealTile()
-    tile.setOrientation(orientation)
-    game.addPlayToBoard([(tile, (x, y))])
+    # tile = game.dealTile()
+    # tile.setOrientation(orientation)
+    # game.addPlayToBoard([(tile, (x, y))])
     
     for i in range(19):
       for j in range(19):
@@ -79,11 +78,35 @@ class Test:
       print(f'{p[0].getValue()} {p[1][0], p[1][1]}')
       points += p[0].getPoints()
     print(f'Points: {points}')
+    
+    player = Player()
+    player.validatePlay([p[0] for p in play])
+    
+    
+  def testFirstPlay(self, player):
+    game  = Game(player, player)
+
+    for _ in range(9):
+      player.drawTile(game.dealTile())
+      
+    play = player.firstPlay()
+    
+    points = 0
+    for p in play:
+      print(f'{p[0].getValue()} {p[1][0], p[1][1]}')
+      points += p[0].getPoints()
+    print(f'Points: {points}')
+    
+    if points == 0:
+      print([t.getValue() for t in player.operators])
+      print([t.getValue() for t in player.negatives])
+      print([t.getValue() for t in player.integers])
+      print([t.getValue() for t in player.fractions])
 
 test = Test()
 
 # Tests that the Game class sets the before and after of tiles appropriately
-# p1, p2 = Player(), Player()
+p1, p2 = SimplifiedPlayer(), SimplifiedPlayer()
 # g = Game(p1, p2)
 # test.testBeforeAfter(g)
 
