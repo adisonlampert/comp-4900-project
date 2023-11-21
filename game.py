@@ -24,6 +24,14 @@ class Game:
     for _ in range(9):
       self.player1.drawTile(self.dealTile())
       self.player2.drawTile(self.dealTile())
+    
+    play = self.turn.firstPlay()
+    self.addPlayToBoard(play)
+    
+    if self.turn == self.player1:
+      self.turn = self.player2
+    else:
+      self.turn = self.player1
   
   def playRound(self):
     play = self.turn.play(self.board)
@@ -31,8 +39,7 @@ class Game:
     if len(play) == 0: 
       return False # Player cannot play so end game
     
-    for p in play:
-      tile, xPos, yPos = p[0], p[1][0], p[1][1]
+    self.addPlayToBoard(play)
 
     if self.turn == self.player1:
       self.turn = self.player2

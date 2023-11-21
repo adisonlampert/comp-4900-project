@@ -60,9 +60,12 @@ class Player:
       eq.append(curr)
       if "/" in curr and i > 0:
         if eq[i-1].isnumeric():
-          for j in range(i-1,0,-1):
+          for j in range(i-1,-1,-1):
             prev = eq[j]
-            if not prev.isnumeric():
+            if j == 0:
+              eq[j] = "(" + eq[j]
+              eq[i] = "+" + curr + ")"
+            elif not prev.isnumeric():
               eq[j+1] = "(" + eq[j+1]
               eq[i] = "+" + curr + ")"
               break
@@ -81,5 +84,5 @@ class Player:
     
     if leftExpression != rightExpression:
       return False
-    
+
     return True
