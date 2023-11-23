@@ -49,6 +49,7 @@ class SimplifiedPlayer(Player):
         orientation, tileIndex = highestPlay[i].getOrientation(), i
         
     self.removePlayedTiles(highestPlay)
+    self.points += highestPoints
 
     returnValue = []
 
