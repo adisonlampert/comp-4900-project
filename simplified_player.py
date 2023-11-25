@@ -1,8 +1,7 @@
 from copy import deepcopy
 import math
 from player import Player
-from itertools import combinations, permutations
-from constants import Orientation
+from constants import Orientation, MULTIPLIERS
 from tile import Tile
 
 class SimplifiedPlayer(Player):
@@ -29,39 +28,69 @@ class SimplifiedPlayer(Player):
     for r in options:
       for p in r["possibleEquations"]:
         if super().validatePlay(p):
-          validEquations.append({"location": r["location"], "equation": p})
+          validEquations.append({"location": r["location"], "orientation": r["orientation"], "equation": p})
     
-    highestPlay, highestPoints, coords = [], 0, (0,0)
+    highestPlay, highestPoints, highestOrientation, highestPositions = [], 0, None, []
     for eq in validEquations: 
-      points = 0
-      for t in eq["equation"]:
+      points, positions = 0, []
+      tileX, tileY, orientation = eq["location"][0], eq["location"][1], eq["orientation"]
+      doubleEquation, tripleEquation = False, False
+      
+      tileIndex = next((index for (index, tile) in enumerate(eq["equation"]) if tile.getOrientation() != None), None)
+      
+      if tileIndex == None:
+        break
+      
+      for i, t in enumerate(eq["equation"]):
         points += t.getPoints()
+        
+        if orientation == Orientation.HORIZONTAL:
+          xPos = tileX
+          yPos = tileY-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileY
+        else:
+          yPos = tileY
+          xPos = tileX-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileX
+        
+        positions.append((xPos, yPos))
+        
+        coordinates = f"{xPos},{yPos}"  
+        if coordinates in MULTIPLIERS:
+          mult = MULTIPLIERS[coordinates]
+          if mult == "2S":
+            highestPoints += t.getPoints()
+          if mult == "3S":
+            highestPoints += t.getPoints()*2
+          if mult == "2E":
+            doubleEquation = True
+          if mult == "3E":
+            tripleEquation = True
 
+      if doubleEquation:
+        points *= 2
+      if tripleEquation:
+        points *= 3
+      
       if points > highestPoints:
         highestPoints = points
         highestPlay = eq["equation"]
-        coords = eq["location"]
-
-    orientation, tileIndex = None, 0
+        highestOrientation = orientation
+        highestPositions = positions
     
-    for i in range(len(highestPlay)):
-      if highestPlay[i].getOrientation():
-        orientation, tileIndex = highestPlay[i].getOrientation(), i
+    returnValue = []
+    for i, currTile in enumerate(highestPlay):
+      if highestOrientation == None:
+        break
+      
+      if highestOrientation == Orientation.HORIZONTAL:
+        t.setOrientation(Orientation.VERTICAL)
+      else:
+        t.setOrientation(Orientation.HORIZONTAL)
+      
+      returnValue.append((currTile, highestPositions[i]))
         
     self.removePlayedTiles(highestPlay)
 
-    returnValue = []
-
-    for i, currTile in enumerate(highestPlay): 
-      if orientation == Orientation.HORIZONTAL:
-          currTile.setOrientation(Orientation.VERTICAL)
-          xPos = coords[0]
-          yPos = coords[1]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[1]
-      else:
-        currTile.setOrientation(Orientation.HORIZONTAL)
-        yPos = coords[1]
-        xPos = coords[0]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[0]
-      returnValue.append((currTile, (xPos, yPos)))
+    self.points += highestPoints
 
     return returnValue
               
@@ -100,17 +129,17 @@ class SimplifiedPlayer(Player):
         
       if i < len(cPlaySpace) - min(10, tile.getAfter()):
         for j in range(0, i):
-          sRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())+1
-          for k in range(sRange, min(j+12, len(cPlaySpace)+1)):
+          aRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())+1
+          for k in range(aRange, min(j+12, len(cPlaySpace)+1)):
             possibleArrangements.append(cPlaySpace[j:k])
       else:
-        # eRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())-1
-        for j in range(0, i):
+        bRange = min(10, tile.getBefore()) if not space else min(10, tile.getBefore())-1
+        for j in range(0, bRange):
           for k in range(i+2, min(j+12, len(cPlaySpace)+1)):
             possibleArrangements.append(cPlaySpace[j:k])
             
       possibilities = self.generatePossibleEquations(possibleArrangements)
-      options.append({"location": (xPos, yPos), "possibleEquations": possibilities})
+      options.append({"location": (xPos, yPos), "orientation": tile.getOrientation(), "possibleEquations": possibilities})
       
     return options
     
@@ -194,6 +223,8 @@ class SimplifiedPlayer(Player):
           highestPlay = eq
         
     self.removePlayedTiles(highestPlay)
+    if len(self.rack) == 0:
+      self.points += 40
 
     returnValue = []
 
