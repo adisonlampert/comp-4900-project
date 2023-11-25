@@ -21,6 +21,8 @@ class SimplifiedPlayer(Player):
         if tile is None or not tile.isPlayable():
           continue
         
+        print(f'Checking new tile {tile.getValue()}, Before: {tile.getBefore()}, After: {tile.getAfter()}')
+        
         playSpace = self.generatePlaySpace(tile)
         options += self.generateOptions(playSpace, tile, xPos, yPos)  
         
@@ -54,12 +56,12 @@ class SimplifiedPlayer(Player):
         positions.append((xPos, yPos))
         
         coordinates = f"{xPos},{yPos}"  
-        if coordinates in MULTIPLIERS:
+        if coordinates in MULTIPLIERS and board.getTile(xPos, yPos) != None:
           mult = MULTIPLIERS[coordinates]
           if mult == "2S":
-            highestPoints += t.getPoints()
+            points += t.getPoints()
           if mult == "3S":
-            highestPoints += t.getPoints()*2
+            points += t.getPoints()*2
           if mult == "2E":
             doubleEquation = True
           if mult == "3E":
@@ -82,15 +84,18 @@ class SimplifiedPlayer(Player):
         break
       
       if highestOrientation == Orientation.HORIZONTAL:
-        t.setOrientation(Orientation.VERTICAL)
+        currTile.setOrientation(Orientation.VERTICAL)
       else:
-        t.setOrientation(Orientation.HORIZONTAL)
+        currTile.setOrientation(Orientation.HORIZONTAL)
       
       returnValue.append((currTile, highestPositions[i]))
         
     self.removePlayedTiles(highestPlay)
-
+    
     self.points += highestPoints
+    
+    if super().getRackSize() == 0:
+      self.points += 40
 
     return returnValue
               
@@ -210,33 +215,55 @@ class SimplifiedPlayer(Player):
             
       options += self.generatePossibleEquations(possibleArrangements)
         
-    highestPlay, highestPoints  = [], 0
+    highestPlay, highestPoints, highestPositions  = [], 0, []
     for eq in options: 
+      doubleEquation, tripleEquation = False, False
+      xVal = 9-math.floor(len(highestPlay)/2)
       points = 0
+      positions = []
       for t in eq:
         points += t.getPoints()
+        positions.append((xVal, 9))
+        
+        coordinates = f"{xVal},9"  
+        if coordinates in MULTIPLIERS:
+          mult = MULTIPLIERS[coordinates]
+          if mult == "2S":
+            points += t.getPoints()
+          if mult == "3S":
+            points += t.getPoints()*2
+          if mult == "2E":
+            doubleEquation = True
+          if mult == "3E":
+            tripleEquation = True
+          
+        xVal +=1
+
+      if doubleEquation:
+        points *= 2
+      if tripleEquation:
+        points *= 3
 
       if points > highestPoints:
         if super().validatePlay(eq):
           highestPlay = eq
           highestPoints = points
           highestPlay = eq
+          highestPositions = positions
         
     self.removePlayedTiles(highestPlay)
-    if len(self.rack) == 0:
+    
+    if super().getRackSize() == 0:
       self.points += 40
 
     returnValue = []
-
-    xVal = 9-math.floor(len(highestPlay)/2)
     
     for i, currTile in enumerate(highestPlay):
       currTile.setOrientation(Orientation.HORIZONTAL)
-      yPos = 9
-      xPos = xVal
-      xVal +=1
-      returnValue.append((currTile, (xPos, yPos)))
-
+      returnValue.append((currTile, highestPositions[i]))
+    
+    self.points += highestPoints
+      
     return returnValue
   
   def removePlayedTiles(self, highestPlay):

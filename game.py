@@ -28,6 +28,9 @@ class Game:
     play = self.turn.firstPlay()
     self.addPlayToBoard(play)
     
+    for _ in play:
+      self.turn.drawTile(self.dealTile())
+    
     if self.turn == self.player1:
       self.turn = self.player2
     else:
@@ -40,11 +43,19 @@ class Game:
       return False # Player cannot play so end game
     
     self.addPlayToBoard(play)
+    
+    for _ in play:
+      if len(self.tiles) == 0:
+        break
+      
+      self.turn.drawTile(self.dealTile())
 
     if self.turn == self.player1:
       self.turn = self.player2
     else:
       self.turn = self.player1
+    
+    return True
       
   def dealTile(self):
     return self.tiles.pop(-1)
@@ -86,7 +97,7 @@ class Game:
     
     for i in range(len(play)):
       tile, xPos, yPos = play[i][0], play[i][1][0], play[i][1][1]
-      if tile.getValue() == "=":
+      if tile.getValue() == "=" or tile.getBefore() != None:
         self.board.updateTileBefore(xPos, yPos, 0)
         self.board.updateTileAfter(xPos, yPos, 0)
       else:
@@ -101,6 +112,12 @@ class Game:
           self.board.updateTileAfter(xPos, yPos, min(*aDists[i:]))
         else:
           self.board.updateTileAfter(xPos, yPos, min(*aDists[i:i+3]))
+          
+        if self.board.getTile(xPos, yPos).getAfter() == None:
+          self.board.updateTileAfter(xPos, yPos, 0)
+        
+        if self.board.getTile(xPos, yPos).getBefore() == None:
+          self.board.updateTileBefore(xPos, yPos, 0)
     
   def updatePlayableSpaceVertical(self, play):
     # We need to search and update all before and after values for tiles above and
@@ -360,3 +377,6 @@ class Game:
         dists.append(19-xPos-1)
     
     return dists
+  
+  def __str__(self):
+    return f'Player 1 points: {self.player1.getPoints()}\nPlayer 2 points: {self.player2.getPoints()}\n{self.board}'

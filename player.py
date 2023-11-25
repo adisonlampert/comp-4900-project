@@ -14,6 +14,9 @@ class Player:
   def getPoints(self):
     return self.points
 
+  def getRackSize(self):
+    return len(self.operators) + len(self.negatives) + len(self.integers) + len(self.fractions)
+
   def drawTile(self, tile):
     match tile.getType():
       case "operator":
@@ -69,6 +72,8 @@ class Player:
               eq[j+1] = "(" + eq[j+1]
               eq[i] = "+" + curr + ")"
               break
+        else:
+          eq[i] = "(" + eq[i] + ")"
 
     # Split equation into expressions to be evaluated and compared for equality
     equation = "".join([e for e in eq]).replace("×", "*").replace("÷","/")

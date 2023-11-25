@@ -106,8 +106,13 @@ class Test:
 test = Test()
 
 # Tests that the Game class sets the before and after of tiles appropriately
-# p1, p2 = SimplifiedPlayer(), SimplifiedPlayer()
-# g = Game(p1, p2)
+p1, p2 = SimplifiedPlayer(), SimplifiedPlayer()
+g = Game(p1, p2)
+g.startGame()
+print(g)
+
+while (g.playRound()):
+  print(g)
 # test.testBeforeAfter(g)
 
 # Tests that the player finds the best play
