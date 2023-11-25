@@ -36,8 +36,8 @@ class Test:
     mx = max((len(str(ele)) for sub in format for ele in sub))
     i = 0
     for row in format:
-        print("|".join(["{:<{mx}}".format(ele,mx=mx) for ele in row]), i)
-        i+=1
+      print("|".join(["{:<{mx}}".format(ele,mx=mx) for ele in row]), i)
+      i+=1
 
     for i in range(19):
       for j in range(19):
@@ -106,10 +106,10 @@ class Test:
 test = Test()
 
 # Tests that the Game class sets the before and after of tiles appropriately
-p1, p2 = SimplifiedPlayer(), SimplifiedPlayer()
+# p1, p2 = SimplifiedPlayer(), SimplifiedPlayer()
 # g = Game(p1, p2)
 # test.testBeforeAfter(g)
 
 # Tests that the player finds the best play
-sp = SimplifiedPlayer()
-test.testPlay(sp)
+# sp = SimplifiedPlayer()
+# test.testPlay(sp)

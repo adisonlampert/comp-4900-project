@@ -28,8 +28,7 @@ class SimplifiedPlayer(Player):
     for r in options:
       for p in r["possibleEquations"]:
         if super().validatePlay(p):
-          validEquations.append({"location": r["location"], "orientation": r["orientation"], "tileIndex": r["tileIndex"], "equation": p})
-    
+          validEquations.append({"location": r["location"], "orientation": r["orientation"], "equation": p})
     
     highestPlay, highestPoints, highestOrientation, highestPositions = [], 0, None, []
     for eq in validEquations: 
@@ -37,10 +36,10 @@ class SimplifiedPlayer(Player):
       tileX, tileY, orientation = eq["location"][0], eq["location"][1], eq["orientation"]
       doubleEquation, tripleEquation = False, False
       
-      if orientation == Orientation.HORIZONTAL:
-        tileIndex = eq["location"][0]
-      else:
-        tileIndex = eq["location"][1]
+      tileIndex = next((index for (index, tile) in enumerate(eq["equation"]) if tile.getOrientation() != None), None)
+      
+      if tileIndex == None:
+        break
       
       for i, t in enumerate(eq["equation"]):
         points += t.getPoints()
@@ -130,11 +129,12 @@ class SimplifiedPlayer(Player):
         
       if i < len(cPlaySpace) - min(10, tile.getAfter()):
         for j in range(0, i):
-          sRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())+1
-          for k in range(sRange, min(j+12, len(cPlaySpace)+1)):
+          aRange = len(cPlaySpace) - min(10, tile.getAfter()) if not space else len(cPlaySpace) - min(10, tile.getAfter())+1
+          for k in range(aRange, min(j+12, len(cPlaySpace)+1)):
             possibleArrangements.append(cPlaySpace[j:k])
       else:
-        for j in range(0, i):
+        bRange = min(10, tile.getBefore()) if not space else min(10, tile.getBefore())-1
+        for j in range(0, bRange):
           for k in range(i+2, min(j+12, len(cPlaySpace)+1)):
             possibleArrangements.append(cPlaySpace[j:k])
             
@@ -208,9 +208,7 @@ class SimplifiedPlayer(Player):
           if len(cPlaySpace[j:k]) > 2:
             possibleArrangements.append(cPlaySpace[j:k])
             
-      op, oor = self.generatePossibleEquations(possibleArrangements)
-      options += op
-      orientations += oor
+      options += self.generatePossibleEquations(possibleArrangements)
         
     highestPlay, highestPoints  = [], 0
     for eq in options: 
