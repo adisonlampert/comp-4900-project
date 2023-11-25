@@ -1,7 +1,6 @@
 from copy import deepcopy
 import math
 from player import Player
-from itertools import combinations, permutations
 from constants import Orientation, MULTIPLIERS
 from tile import Tile
 
@@ -29,28 +28,29 @@ class SimplifiedPlayer(Player):
     for r in options:
       for p in r["possibleEquations"]:
         if super().validatePlay(p):
-          validEquations.append({"location": r["location"], "orientation": r["orientation"], "equation": p})
+          validEquations.append({"location": r["location"], "orientation": r["orientation"], "tileIndex": r["tileIndex"], "equation": p})
     
     
     highestPlay, highestPoints, highestOrientation, highestPositions = [], 0, None, []
     for eq in validEquations: 
-      points, positions = 0,  []
-      orientation, tileIndex = eq["orientation"], eq["location"][1]
+      points, positions = 0, []
+      tileX, tileY, orientation = eq["location"][0], eq["location"][1], eq["orientation"]
       doubleEquation, tripleEquation = False, False
       
       if orientation == Orientation.HORIZONTAL:
         tileIndex = eq["location"][0]
+      else:
+        tileIndex = eq["location"][1]
+      
       for i, t in enumerate(eq["equation"]):
-        coords = eq["location"]
-        
         points += t.getPoints()
         
         if orientation == Orientation.HORIZONTAL:
-          xPos = coords[0]
-          yPos = coords[1]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[1]
+          xPos = tileX
+          yPos = tileY-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileY
         else:
-          yPos = coords[1]
-          xPos = coords[0]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[0]
+          yPos = tileY
+          xPos = tileX-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileX
         
         positions.append((xPos, yPos))
         
@@ -58,9 +58,9 @@ class SimplifiedPlayer(Player):
         if coordinates in MULTIPLIERS:
           mult = MULTIPLIERS[coordinates]
           if mult == "2S":
-            highestPoints += currTile.getPoints()
+            highestPoints += t.getPoints()
           if mult == "3S":
-            highestPoints += currTile.getPoints()*2
+            highestPoints += t.getPoints()*2
           if mult == "2E":
             doubleEquation = True
           if mult == "3E":

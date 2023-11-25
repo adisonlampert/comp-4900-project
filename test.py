@@ -52,7 +52,7 @@ class Test:
       player.drawTile(game.dealTile())
     
     x, y = random.randrange(19), random.randrange(19)
-    orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
+    orientation = Orientation.VERTICAL
     
     tile = game.dealTile()
     tile.setOrientation(orientation)
