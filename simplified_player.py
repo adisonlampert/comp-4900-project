@@ -2,7 +2,7 @@ from copy import deepcopy
 import math
 from player import Player
 from itertools import combinations, permutations
-from constants import Orientation
+from constants import Orientation, MULTIPLIERS
 from tile import Tile
 
 class SimplifiedPlayer(Player):
@@ -49,9 +49,10 @@ class SimplifiedPlayer(Player):
         orientation, tileIndex = highestPlay[i].getOrientation(), i
         
     self.removePlayedTiles(highestPlay)
-    self.points += highestPoints
+
 
     returnValue = []
+    doubleEquation, tripleEquation = False
 
     for i, currTile in enumerate(highestPlay): 
       if orientation == Orientation.HORIZONTAL:
@@ -62,7 +63,29 @@ class SimplifiedPlayer(Player):
         currTile.setOrientation(Orientation.HORIZONTAL)
         yPos = coords[1]
         xPos = coords[0]-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+coords[0]
-      returnValue.append((currTile, (xPos, yPos)))
+      
+      # add multiplier points
+      coordinates = f"{xPos},{yPos}"
+      if coordinates in MULTIPLIERS:
+        mult = MULTIPLIERS[coordinates]
+        if mult == "2S":
+          highestPoints += currTile.getPoints()
+        if mult == "3S":
+          highestPoints += currTile.getPoints()*2
+        if mult == "2E":
+          doubleEquation = True
+        if mult == "3E":
+          tripleEquation = True
+
+    returnValue.append((currTile, (xPos, yPos)))
+
+    # add double/triple equation points
+    if doubleEquation:
+      highestPoints *= 2
+    if tripleEquation:
+      highestPoints *= 3
+
+    self.points += highestPoints
 
     return returnValue
               
@@ -195,6 +218,8 @@ class SimplifiedPlayer(Player):
           highestPlay = eq
         
     self.removePlayedTiles(highestPlay)
+    if len(self.rack) == 0:
+      self.points += 40
 
     returnValue = []
 
