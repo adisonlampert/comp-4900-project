@@ -1,3 +1,6 @@
+import pygame
+
+# colours
 BLACK = (  0,   0,   0)
 WHITE = (255, 255, 255)
 BKGD = (108,127,170)
@@ -5,3 +8,5 @@ TWO_E = (79,26,88)
 THREE_E = (140,27,87)
 TWO_S = (24,62,135)
 THREE_S = (1,121,73)
+TILE = (249,246,155)
+WINDOW_BKGD = (173,173,173)
