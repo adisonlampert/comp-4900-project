@@ -7,18 +7,20 @@ class EquateGame:
         pygame.init()
 
     def play(self):
-        SIZE = (760, 840)
-        screen = pygame.display.set_mode(SIZE)
+        screen = pygame.display.set_mode(760, 840)
         clock = pygame.time.Clock()
-        running = True
-        
         pygame.display.set_caption("Equate Board Game")
-        board = EquateBoard()
+        running = True
+
+        board = EquateBoard()   
+        board.initBoard()
         plays = board.seedPlays()
+
         p1Rack = plays[0]["player1Rack"]
         p2Rack = plays[0]["player2Rack"]
         p1Points = 0
         p2Points = 0
+
         tiles_on_board = []
 
         start_time = pygame.time.get_ticks()  # Record the start time
@@ -70,17 +72,15 @@ class EquateGame:
 
             # Redraw the entire screen here
             screen.fill(styles.WINDOW_BKGD)
-            board.drawTopInfo(screen, p1Points)
-            board.drawTopRack(screen, p1Rack)
-            board.drawBottomInfo(screen, p2Points)
-            board.drawBottomRack(screen, p2Rack)
-            board.drawBoard(screen)
-            board.drawTiles(screen, tiles_on_board)
+            board.drawTopInfo(screen, p1Points, p1Rack)
+            board.drawBottomInfo(screen, p2Points, p2Rack)
+            board.drawBoard(screen, tiles_on_board)
 
             pygame.display.flip()
             clock.tick(60)
 
         pygame.quit()
+
 
 game = EquateGame()
 game.play()

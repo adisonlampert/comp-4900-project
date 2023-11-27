@@ -13,7 +13,6 @@ from constants import TILES
 class EquateBoard:
     def __init__(self):
         self.board = []
-        self.initBoard()
    
     def initBoard(self):
         for i in range(19):
@@ -21,6 +20,15 @@ class EquateBoard:
             for j in range(19):
                 self.board[i].append(None)
 
+    def generateTiles(self, tile_values, x_positions=None, y_positions=None):
+        tiles = []
+        for i, value in enumerate(tile_values):
+            x = x_positions[i] if x_positions else None
+            y = y_positions[i] if y_positions else None
+            points = TILES[self.normalize_value(value)]["points"] if value != "=" else 0
+            tiles.append(Tile(value, points, x, y))
+        return tiles
+    
     def normalize_value(self, value):
         unicode_to_ascii = {
             "\u00d7": "×",  
@@ -28,61 +36,79 @@ class EquateBoard:
         }
         return unicode_to_ascii.get(value, value)
 
-    def create_tile_objects(self, tile_values, x_positions=None, y_positions=None):
-        tile_objects = []
-        for i, value in enumerate(tile_values):
-            x = x_positions[i] if x_positions else None
-            y = y_positions[i] if y_positions else None
-            points = TILES[self.normalize_value(value)]["points"] if value != "=" else 0
-            tile_objects.append(Tile(value, points, x, y))
-        return tile_objects
-
     def seedPlays(self):
         with open("game.json", "r") as file:
             game_data = json.load(file)
         
         plays = []
-
+        playData = {}
         for play in game_data:
             if play == game_data[0]:
-                play_data = {
-                    "player1Rack": self.create_tile_objects(play["player1"]),
-                    "player2Rack": self.create_tile_objects(play["player2"]),
+                playData = {
+                    "player1Rack": self.generateTiles(play["player1"]),
+                    "player2Rack": self.generateTiles(play["player2"]),
                 }
-                plays.append(play_data)
-                continue
-                
-            play_data = {
-                "player": play["player"],
-                "beforeRack": self.create_tile_objects(play["beforeRack"]),
-                "afterRack": self.create_tile_objects(play["afterRack"]),
-                "play": self.create_tile_objects(play["play"], play["xPositions"], play["yPositions"]),
-                "points": play["points"],
-            }
-            plays.append(play_data)
-    
+            else:
+                playData = {
+                    "player": play["player"],
+                    "beforeRack": self.generateTiles(play["beforeRack"]),
+                    "afterRack": self.generateTiles(play["afterRack"]),
+                    "play": self.generateTiles(play["play"], play["xPositions"], play["yPositions"]),
+                    "points": play["points"],
+                }
+            plays.append(playData)
         return plays
-    
-    def drawBoard(self, screen):
+
+    def drawTopInfo(self, screen, points, rack):
+        font = pygame.font.SysFont("timesnewroman", 20) 
+
+        # Render text surfaces
+        player_surface = font.render("Advanced Player", True, styles.WHITE)
+        points_surface = font.render(f"Points: {points}", True, styles.WHITE)
+ 
+        # Draw text
+        screen.blit(player_surface, (10, 10))
+        screen.blit(points_surface, (170, 10))
+
+        # Draw vertical separator
+        pygame.draw.line(screen, styles.WHITE, (160, 0), (160, 40), 2)
+        
+        # Draw Advanced Player's rack
+        for i in range(len(rack)):
+            rack[i].draw(screen, 280 + i * 40, 0)
+
+    def drawBottomInfo(self, screen, points, rack):
+        font = pygame.font.SysFont("timesnewroman", 20)
+
+        # Render text surfaces
+        player_surface = font.render("Simplified Player", True, styles.WHITE)
+        points_surface = font.render(f"Points: {points}", True, styles.WHITE)
+
+        # Draw text
+        screen.blit(player_surface, (10, 808))
+        screen.blit(points_surface, (170, 808))
+
+        # Draw vertical separator
+        pygame.draw.line(screen, styles.WHITE, (160, 800), (160, 840), 2)
+        
+        # Draw Simplified Player's rack
+        for i in range(len(rack)):
+            rack[i].draw(screen, 280 + i * 40, 800)
+
+    def drawBoard(self, screen, tiles):
                     
-        grid_size = 19 
-        square_size = 40
-
-        start_y = 40
-        end_y = 800  
-
-        board_area = pygame.Rect(0, start_y, 760, end_y - start_y)
+        board_area = pygame.Rect(0, 40, 760, 800 - 40)
         pygame.draw.rect(screen, styles.BKGD, board_area)
 
-        for i in range(grid_size + 1):
-            y = start_y + i * square_size
+        for i in range(20):
+            y = 40 + i * 40
             pygame.draw.aaline(screen, styles.TILE, (0, y), (760, y))
 
-        for i in range(grid_size):
-            x = i * square_size
-            pygame.draw.aaline(screen, styles.TILE, (x, start_y), (x, end_y))
+        for i in range(19):
+            x = i * 40
+            pygame.draw.aaline(screen, styles.TILE, (x, 40), (x, 800))
 
-        pygame.draw.aaline(screen, styles.TILE, (759, start_y), (759, end_y))
+        pygame.draw.aaline(screen, styles.TILE, (759, 40), (759, 800))
 
         with open("board_data.txt", "r") as file:
             board_data = [line.split() for line in file.readlines()]
@@ -111,66 +137,6 @@ class EquateBoard:
                     text_rect = text_surface.get_rect(center=(x + 20, y + 20))
                     screen.blit(text_surface, text_rect)
 
-
-    def drawTopInfo(self, screen, points):
-        font = pygame.font.SysFont("timesnewroman", 20)  # Adjust font size to fit the height
-
-        # Define text
-        player_text = "Advanced Player"
-        points_text = f"points: {points}"
-
-        # Render text surfaces
-        player_surface = font.render(player_text, True, styles.WHITE)
-        points_surface = font.render(points_text, True, styles.WHITE)
-
-        # Text positions
-        player_x = 10  # Flush left
-        separator_1_x = player_x + player_surface.get_width() + 11  # Right after "Advanced Player" + 10px padding
-        points_x = separator_1_x + 10  # After first separator + 10px for the separator width
-        separator_2_x = points_x + points_surface.get_width() + 38  # Right after "points:" + 10px padding
-
-        # Draw text
-        screen.blit(player_surface, (player_x, 10))
-        screen.blit(points_surface, (points_x, 10))
-
-        # Draw vertical separators
-        pygame.draw.line(screen, styles.WHITE, (separator_1_x, 0), (separator_1_x, 40), 2)  # First separator
-        pygame.draw.line(screen, styles.WHITE, (separator_2_x, 0), (separator_2_x, 40), 2)  # Second separator
-
-    def drawBottomInfo(self, screen, points):
-        font = pygame.font.SysFont("timesnewroman", 20)
-
-        # Define text
-        player_text = "Simplified Player"
-        points_text = f"points: {points}"
-
-        # Render text surfaces
-        player_surface = font.render(player_text, True, styles.WHITE)
-        points_surface = font.render(points_text, True, styles.WHITE)
-
-        # Text positions
-        player_x = 10
-        separator_1_x = player_x + player_surface.get_width() + 11
-        points_x = separator_1_x + 10
-        separator_2_x = points_x + points_surface.get_width() + 33
-
-        # Draw text
-        screen.blit(player_surface, (player_x, 808))
-        screen.blit(points_surface, (points_x, 808))
-
-        # Draw vertical separators
-        pygame.draw.line(screen, styles.WHITE, (separator_1_x, 770), (separator_1_x, 840), 2)
-        pygame.draw.line(screen, styles.WHITE, (separator_2_x, 770), (separator_2_x, 840), 2)
-        
-
-    def drawTopRack(self, screen, rack):
-        for i in range(len(rack)):
-            rack[i].draw(screen, 280 + i * 40, 0)
-        
-    def drawBottomRack(self, screen, rack):
-        for i in range(len(rack)):
-            rack[i].draw(screen, 280 + i * 40, 800)
-
-    def drawTiles(self, screen, tiles):
+        # Draw tiles on board that have been played
         for tile in tiles:
             tile.draw(screen, tile.getX() * 40, tile.getY() * 40 + 40)
