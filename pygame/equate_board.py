@@ -63,7 +63,7 @@ class EquateBoard:
         font = pygame.font.SysFont("timesnewroman", 20) 
 
         # Render text surfaces
-        player_surface = font.render("Advanced Player", True, styles.WHITE)
+        player_surface = font.render("Player 1", True, styles.WHITE)
         points_surface = font.render(f"Points: {points}", True, styles.WHITE)
  
         # Draw text
@@ -81,7 +81,7 @@ class EquateBoard:
         font = pygame.font.SysFont("timesnewroman", 20)
 
         # Render text surfaces
-        player_surface = font.render("Simplified Player", True, styles.WHITE)
+        player_surface = font.render("Player 2", True, styles.WHITE)
         points_surface = font.render(f"Points: {points}", True, styles.WHITE)
 
         # Draw text
@@ -140,3 +140,10 @@ class EquateBoard:
         # Draw tiles on board that have been played
         for tile in tiles:
             tile.draw(screen, tile.getX() * 40, tile.getY() * 40 + 40)
+
+    def drawGame(self, screen, p1Rack, p2Rack, p1Points, p2Points, tiles_on_board):
+        screen.fill(styles.WINDOW_BKGD)
+        self.drawTopInfo(screen, p1Points, p1Rack)
+        self.drawBottomInfo(screen, p2Points, p2Rack)
+        self.drawBoard(screen, tiles_on_board)
+        pygame.display.flip()
