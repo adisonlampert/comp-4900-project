@@ -5,14 +5,12 @@ from constants import Orientation, MULTIPLIERS
 from tile import Tile
 
 class SimplifiedPlayer(Player):
-  def __init__(self):
-    super().__init__()
-
-  def play(self, board):
-    highestPlay = []
-    tile = None
+  def __init__(self, name):
+    super().__init__(name)
     
+  def generateAllOptions(self, board):
     options = []
+    tile = None
 
     for yPos in range(19):
       for xPos in range(19): 
@@ -21,68 +19,72 @@ class SimplifiedPlayer(Player):
         if tile is None or not tile.isPlayable():
           continue
         
-        print(f'Checking new tile {tile.getValue()}, Before: {tile.getBefore()}, After: {tile.getAfter()}')
+        print(f'Checking new tile {tile.getValue()} {xPos, yPos}, Before: {tile.getBefore()}, After: {tile.getAfter()}')
         
         playSpace = self.generatePlaySpace(tile)
-        options += self.generateOptions(playSpace, tile, xPos, yPos)  
+        options += self.generateOptions(playSpace, tile, xPos, yPos)
         
-    validEquations = []
-    for r in options:
-      for p in r["possibleEquations"]:
-        if super().validatePlay(p):
-          validEquations.append({"location": r["location"], "orientation": r["orientation"], "equation": p})
-    
+    return options
+  
+  def findHighestPlay(self, board, options):
     highestPlay, highestPoints, highestOrientation, highestPositions = [], 0, None, []
-    for eq in validEquations: 
-      points, positions = 0, []
-      tileX, tileY, orientation = eq["location"][0], eq["location"][1], eq["orientation"]
-      doubleEquation, tripleEquation = False, False
+    
+    for option in options:
+      tileX, tileY, orientation = option["location"][0], option["location"][1], option["orientation"]
       
-      tileIndex = next((index for (index, tile) in enumerate(eq["equation"]) if tile.getOrientation() != None), None)
-      
-      if tileIndex == None:
-        break
-      
-      for i, t in enumerate(eq["equation"]):
-        points += t.getPoints()
+      for eq in option["possibleEquations"]:
+        points, positions = 0, []
+        doubleEquation, tripleEquation = False, False
+        tileIndex = next((index for (index, tile) in enumerate(eq) if tile.getOrientation() != None), None)
         
-        if orientation == Orientation.HORIZONTAL:
-          xPos = tileX
-          yPos = tileY-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileY
-        else:
-          yPos = tileY
-          xPos = tileX-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileX
+        if tileIndex == None:
+          break
         
-        positions.append((xPos, yPos))
-        
-        coordinates = f"{xPos},{yPos}"  
-        if coordinates in MULTIPLIERS and board.getTile(xPos, yPos) != None:
-          mult = MULTIPLIERS[coordinates]
-          if mult == "2S":
-            points += t.getPoints()
-          if mult == "3S":
-            points += t.getPoints()*2
-          if mult == "2E":
-            doubleEquation = True
-          if mult == "3E":
-            tripleEquation = True
+        for i, t in enumerate(eq):
+          points += t.getPoints()
+          
+          if orientation == Orientation.HORIZONTAL:
+            xPos = tileX
+            yPos = tileY-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileY
+          else:
+            yPos = tileY
+            xPos = tileX-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileX
+          
+          positions.append((xPos, yPos))
+          
+          coordinates = f"{xPos},{yPos}"
+          if coordinates in MULTIPLIERS and board.getTile(xPos, yPos) is None:
+            mult = MULTIPLIERS[coordinates]
+            points += t.getPoints() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
+            doubleEquation = doubleEquation or (mult == "2E")
+            tripleEquation = tripleEquation or (mult == "3E")
 
-      if doubleEquation:
-        points *= 2
-      if tripleEquation:
-        points *= 3
-      
-      if points > highestPoints:
-        highestPoints = points
-        highestPlay = eq["equation"]
-        highestOrientation = orientation
-        highestPositions = positions
+        if doubleEquation:
+          points *= 2
+        if tripleEquation:
+          points *= 3
+        
+        if points > highestPoints:
+          if super().validatePlay(eq):
+            highestPoints = points
+            highestPlay = eq
+            highestOrientation = orientation
+            highestPositions = positions
+    
+    return highestPlay, highestPoints, highestOrientation, highestPositions
+  
+  def play(self, board, _):
+    options = self.generateAllOptions(board)
+    highestPlay, highestPoints, highestOrientation, highestPositions = self.findHighestPlay(board, options)
     
     returnValue = []
     for i, currTile in enumerate(highestPlay):
       if highestOrientation == None:
         break
       
+      if currTile.getOrientation() != None:
+        print(f"Playing on tile {currTile.getValue()}, Before: {currTile.getBefore()}, After: {currTile.getAfter()}")
+        
       if highestOrientation == Orientation.HORIZONTAL:
         currTile.setOrientation(Orientation.VERTICAL)
       else:
@@ -175,9 +177,9 @@ class SimplifiedPlayer(Player):
     after = currentEq[nextNoneIndex+1] if nextNoneIndex+1 < len(currentEq) else None
           
     if nextNoneIndex == len(currentEq)-1:
-      playableTiles = self.getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after, last=True)
+      playableTiles = super().getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after, last=True)
     else:
-      playableTiles = self.getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after)
+      playableTiles = super().getPlayableTiles(integers, fractions, negatives, operators, before=before, after=after)
           
     # Return and don't add equation if there are no playable tiles
     if len(playableTiles) == 0:
@@ -198,10 +200,8 @@ class SimplifiedPlayer(Player):
       currentEq[nextNoneIndex] = None  # Backtrack
       
   def firstPlay(self):
-    highestPlay = []
-        
+    highestPlay, options = [], []
     playSpace = [None]*10
-    options = []
     
     for i in range(1, len(playSpace) - 1):
       cPlaySpace = playSpace.copy()
@@ -225,17 +225,12 @@ class SimplifiedPlayer(Player):
         points += t.getPoints()
         positions.append((xVal, 9))
         
-        coordinates = f"{xVal},9"  
+        coordinates = f"{xVal},9" 
         if coordinates in MULTIPLIERS:
           mult = MULTIPLIERS[coordinates]
-          if mult == "2S":
-            points += t.getPoints()
-          if mult == "3S":
-            points += t.getPoints()*2
-          if mult == "2E":
-            doubleEquation = True
-          if mult == "3E":
-            tripleEquation = True
+          points += t.getPoints() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
+          doubleEquation = doubleEquation or (mult == "2E")
+          tripleEquation = tripleEquation or (mult == "3E") 
           
         xVal +=1
 
@@ -279,88 +274,4 @@ class SimplifiedPlayer(Player):
     rack = [self.integers, self.fractions, self.operators, self.negatives]
     for i in range(len(highestPlay)):
       removeFirstMatchingTile(highestPlay[i], rack)
-
-  def getPlayableTiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
-    match (before.getType() if before is not None else None, after.getType() if after is not None else None):
-      case ("operator", "operator"):
-        return integers + fractions
-      case ("operator", "negative"):
-        return integers + fractions
-      case ("operator", "integer"):
-        return integers + negatives
-      case ("operator", "fraction"):
-        return integers + negatives
-      case ("operator", "equals"):
-        return integers + fractions
-      case ("operator", None):
-        if not last:
-          return integers + fractions + negatives
-        else:
-          return integers + fractions
-      case ("negative", "operator"):
-        return integers + fractions
-      case ("negative", "negative"):
-        return integers + fractions
-      case ("negative", "integer"):
-        return integers
-      case ("negative", "fraction"):
-        return integers
-      case ("negative", "equals"):
-        return integers + fractions
-      case ("negative", None):
-        return integers + fractions
-      case ("integer", "operator"):
-        return integers + fractions
-      case ("integer", "negative"):
-        return integers + fractions
-      case ("integer", "integer"):
-        return integers + negatives + operators
-      case ("integer", "fraction"):
-        return integers + negatives + operators
-      case ("integer", "equals"):
-        return integers + fractions
-      case ("integer", None):
-        if not last:
-          return integers + fractions + negatives + operators
-        else:
-          return integers + fractions
-      case ("fraction", "operator"):
-        return []
-      case ("fraction", "negative"):
-        return operators
-      case ("fraction", "integer"):
-        return operators + negatives
-      case ("fraction", "fraction"):
-        return operators + negatives
-      case ("fraction", "equals"):
-        return []
-      case ("fraction", None):
-        if not last:
-          return operators + negatives
-        else:
-          return []
-      case ("equals", "operator"):
-        return integers + fractions
-      case ("equals", "negative"):
-        return integers + fractions
-      case ("equals", "integer"):
-        return integers + negatives
-      case ("equals", "fraction"):
-        return integers + negatives
-      case ("equals", None):
-        if not last:
-          return integers + fractions + negatives
-        else:
-          return integers + fractions
-      case (None, None):
-        return integers + fractions + negatives
-      case (None, "operator"):
-        return integers + fractions
-      case (None, "negative"):
-        return integers + fractions
-      case (None, "integer"):
-        return integers + negatives
-      case (None, "fraction"):
-        return integers + negatives
-      case (None, "equals"):
-        return integers + fractions
+      

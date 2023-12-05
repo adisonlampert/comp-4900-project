@@ -29,16 +29,20 @@ class Tile:
     return self.type
   
   def isPlayable(self):
-    return self.after+self.before > 1
+    return self.after+self.before > 1 and not (self.type == "operator" and (self.before == 0 or self.after == 0))
   
   def setOrientation(self, orientation):
     self.orientation = orientation
 
   def setBefore(self, before):
-    self.before = before
+    if self.before == None or before < self.before:
+      self.before = before
+    self.before = max(self.before, 0)
 
   def setAfter(self, after):
-    self.after = after
+    if self.after == None or after < self.after:
+      self.after = after
+    self.after = max(self.after, 0)
   
   def __str__(self):
     return f'{self.value}'

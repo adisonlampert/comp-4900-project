@@ -58,13 +58,6 @@ class Test:
     tile.setOrientation(orientation)
     game.addPlayToBoard([(tile, (x, y))])
     
-    # x, y = random.randrange(19), random.randrange(19)
-    # orientation = random.choice([Orientation.HORIZONTAL, Orientation.VERTICAL])
-    
-    # tile = game.dealTile()
-    # tile.setOrientation(orientation)
-    # game.addPlayToBoard([(tile, (x, y))])
-    
     for i in range(19):
       for j in range(19):
         if game.board.getTile(j, i) != None:
@@ -106,15 +99,14 @@ class Test:
 test = Test()
 
 # Tests that the Game class sets the before and after of tiles appropriately
-p1, p2 = SimplifiedPlayer(), SimplifiedPlayer()
-g = Game(p1, p2)
-g.startGame()
-print(g)
-
-while (g.playRound()):
+while(True):
+  file = open('data.txt', 'a+') 
+  p1, p2 = SimplifiedPlayer("player1"), SimplifiedPlayer("player2")
+  g = Game(p1, p2)
+  g.startGame()
   print(g)
-# test.testBeforeAfter(g)
 
-# Tests that the player finds the best play
-# sp = SimplifiedPlayer()
-# test.testPlay(sp)
+  while (g.playRound()):
+    print(g)
+  file.write(str(g))
+  file.close()

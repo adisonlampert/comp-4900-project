@@ -1,7 +1,8 @@
 from tile import Tile
 
 class Player:
-  def __init__(self):
+  def __init__(self, name):
+    self.name = name
     self.operators = []
     self.negatives = []
     self.integers = []
@@ -13,6 +14,8 @@ class Player:
   
   def getPoints(self):
     return self.points
+  
+  def
 
   def getRackSize(self):
     return len(self.operators) + len(self.negatives) + len(self.integers) + len(self.fractions)
@@ -31,7 +34,7 @@ class Player:
   def addPoints(self, points):
     self.points += points
 
-  def play(self, board):
+  def play(self, board, opponent):
     '''
     Board is 2D array
     Each entry of the array will look like
@@ -90,4 +93,89 @@ class Player:
     if leftExpression != rightExpression:
       return False
 
-    return True
+    return leftExpression == rightExpression
+
+  def getPlayableTiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
+    match (before.getType() if before is not None else None, after.getType() if after is not None else None):
+      case ("operator", "operator"):
+        return integers + fractions
+      case ("operator", "negative"):
+        return integers + fractions
+      case ("operator", "integer"):
+        return integers + negatives
+      case ("operator", "fraction"):
+        return integers + negatives
+      case ("operator", "equals"):
+        return integers + fractions
+      case ("operator", None):
+        if not last:
+          return integers + fractions + negatives
+        else:
+          return integers + fractions
+      case ("negative", "operator"):
+        return integers + fractions
+      case ("negative", "negative"):
+        return integers + fractions
+      case ("negative", "integer"):
+        return integers
+      case ("negative", "fraction"):
+        return integers
+      case ("negative", "equals"):
+        return integers + fractions
+      case ("negative", None):
+        return integers + fractions
+      case ("integer", "operator"):
+        return integers + fractions
+      case ("integer", "negative"):
+        return integers + fractions
+      case ("integer", "integer"):
+        return integers + negatives + operators
+      case ("integer", "fraction"):
+        return integers + negatives + operators
+      case ("integer", "equals"):
+        return integers + fractions
+      case ("integer", None):
+        if not last:
+          return integers + fractions + negatives + operators
+        else:
+          return integers + fractions
+      case ("fraction", "operator"):
+        return []
+      case ("fraction", "negative"):
+        return operators
+      case ("fraction", "integer"):
+        return operators + negatives
+      case ("fraction", "fraction"):
+        return operators + negatives
+      case ("fraction", "equals"):
+        return []
+      case ("fraction", None):
+        if not last:
+          return operators + negatives
+        else:
+          return []
+      case ("equals", "operator"):
+        return integers + fractions
+      case ("equals", "negative"):
+        return integers + fractions
+      case ("equals", "integer"):
+        return integers + negatives
+      case ("equals", "fraction"):
+        return integers + negatives
+      case ("equals", None):
+        if not last:
+          return integers + fractions + negatives
+        else:
+          return integers + fractions
+      case (None, None):
+        return integers + fractions + negatives
+      case (None, "operator"):
+        return integers + fractions
+      case (None, "negative"):
+        return integers + fractions
+      case (None, "integer"):
+        return integers + negatives
+      case (None, "fraction"):
+        return integers + negatives
+      case (None, "equals"):
+        return integers + fractions
