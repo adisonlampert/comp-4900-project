@@ -2,6 +2,7 @@ import random
 from constants import Orientation
 from game import Game
 from greedy_player import GreedyPlayer
+from cheating_player import CheatingPlayer
 from player import Player
 from board import Board
 
@@ -101,8 +102,8 @@ test = Test()
 
 # Tests that the Game class sets the before and after of tiles appropriately
 while(True):
-  file = open('data.txt', 'a+') 
-  p1, p2 = GreedyPlayer("player1"), GreedyPlayer("player2")
+  file = open('cheating_data.txt', 'a+') 
+  p1, p2 = GreedyPlayer("Greedy Player"), CheatingPlayer("Cheating Player")
   g = Game(p1, p2)
   g.start_game()
   print(g)

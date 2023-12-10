@@ -1,7 +1,7 @@
 import json
 from copy import deepcopy
 from tile import Tile
-from constants import TILES, Orientation, BOARD_SIZE
+from constants import TILES, Orientation, BOARD_SIZE, RACK_SIZE
 from board import Board
 import random
 
@@ -27,7 +27,7 @@ class Game:
 
   def start_game(self):
     # Draw initial tiles for both players
-    for _ in range(9):
+    for _ in range(RACK_SIZE):
       self.player1.draw_tile(self.deal_tile())
       self.player2.draw_tile(self.deal_tile())
     
@@ -218,6 +218,64 @@ class Game:
         break
 
     return board
+    # Adjust before and after distances based on the start and end positions
+    if start_pos == 0:
+      b_dists = [18] + b_dists
+      a_dists = [18] + a_dists
+    if end_pos == 18:
+      b_dists = b_dists + [18]
+      a_dists = a_dists + [18]
+
+    # Iterate through each tile in the play
+    for i in range(len(play)):
+      tile, x_pos, y_pos = play[i][0], play[i][1][0], play[i][1][1]
+      
+      # Check if the tile is a blank tile or has a defined before value
+      if tile.get_value() == "=" or tile.get_before() is not None:
+        board.update_tile_before(x_pos, y_pos, 0)
+        board.update_tile_after(x_pos, y_pos, 0)
+        print("a: ", x_pos, y_pos)
+      else:
+        # Update before and after values based on the minimum distances
+        print(x_pos, y_pos)
+        board.update_tile_before(x_pos, y_pos, min(*b_dists[i:i+3]))
+        board.update_tile_after(x_pos, y_pos, min(*a_dists[i:i+3]))
+
+
+      # Check and update adjacent tiles
+      if x_pos < 18:
+        if y_pos > 0:
+          if board.get_tile(x_pos+1, y_pos-1) is not None:
+            if orientation == Orientation.HORIZONTAL:
+              board.update_tile_before(x_pos, y_pos, 0)
+              board.update_tile_before(x_pos+1, y_pos-1, 0)
+            else:
+              board.update_tile_after(x_pos, y_pos, 0)
+              board.update_tile_after(x_pos+1, y_pos-1, 0)
+            print("b: ", x_pos, y_pos)
+        if y_pos < 18:
+          if board.get_tile(x_pos+1, y_pos+1) is not None:
+            board.update_tile_after(x_pos, y_pos, 0)
+            board.update_tile_before(x_pos+1, y_pos+1, 0)
+            print("c: ", x_pos, y_pos)
+
+      if x_pos > 0:
+        if y_pos > 0:
+          if board.get_tile(x_pos-1, y_pos-1) is not None:
+            board.update_tile_before(x_pos, y_pos, 0)
+            board.update_tile_after(x_pos-1, y_pos-1, 0)
+            print("d: ", x_pos, y_pos)
+        if y_pos < 18:
+          if board.get_tile(x_pos-1, y_pos+1) is not None:
+            if orientation == Orientation.HORIZONTAL:
+              board.update_tile_after(x_pos, y_pos, 0)
+              board.update_tile_after(x_pos-1, y_pos+1, 0)
+            else:
+              board.update_tile_before(x_pos, y_pos, 0)
+              board.update_tile_before(x_pos-1, y_pos+1, 0)
+            print("e: ", x_pos, y_pos)
+              
+    return board
   
   @staticmethod 
   def update_inline_after(position1, position2, orientation, board):
@@ -320,7 +378,7 @@ class Game:
     return dists, board
   
   def __str__(self):
-    return f'Player 1 points: {self.player1.get_points()}\nPlayer 2 points: {self.player2.get_points()}\n{self.board}'
+    return f'{self.player1.get_name()} points: {self.player1.get_points()}\n{self.player2.get_name()} points: {self.player2.get_points()}\n{self.board}'
 
 
 # try:

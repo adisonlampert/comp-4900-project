@@ -1,7 +1,7 @@
 from copy import deepcopy
 import math
 from player import Player
-from constants import Orientation, MULTIPLIERS, BOARD_SIZE
+from constants import Orientation, MULTIPLIERS, BOARD_SIZE, RACK_SIZE
 from tile import Tile
 
 class GreedyPlayer(Player):
@@ -110,12 +110,12 @@ class GreedyPlayer(Player):
     play_space = []
     
     if tile == None:
-      return [None for _ in range(10)]
-    before = min(tile.get_before(), 10)
+      return [None for _ in range(RACK_SIZE+1)]
+    before = min(tile.get_before(), RACK_SIZE+1)
     for _ in range(before):
       play_space.append(None)
     play_space.append(tile)
-    after = min(tile.get_after(), 10)
+    after = min(tile.get_after(), RACK_SIZE+1)
     for _ in range(after):
       play_space.append(None)
     return play_space
@@ -139,13 +139,13 @@ class GreedyPlayer(Player):
       if tile.get_type() == "operator" or tile.get_type() == "negative":
         space =  True
         
-      if i < len(cp_pspace) - min(10, tile.get_after()):
+      if i < len(cp_pspace) - min(RACK_SIZE+1, tile.get_after()):
         for j in range(0, i):
-          a_range = len(cp_pspace) - min(10, tile.get_after()) if not space else len(cp_pspace) - min(10, tile.get_after())+1
+          a_range = len(cp_pspace) - min(RACK_SIZE+1, tile.get_after()) if not space else len(cp_pspace) - min(RACK_SIZE+1, tile.get_after())+1
           for k in range(a_range, min(j+12, len(cp_pspace)+1)):
             possible_arrangements.append(cp_pspace[j:k])
       else:
-        bRange = min(10, tile.get_before()) if not space else min(10, tile.get_before())-1
+        bRange = min(RACK_SIZE+1, tile.get_before()) if not space else min(RACK_SIZE+1, tile.get_before())-1
         for j in range(0, bRange):
           for k in range(i+2, min(j+12, len(cp_pspace)+1)):
             possible_arrangements.append(cp_pspace[j:k])
@@ -205,7 +205,7 @@ class GreedyPlayer(Player):
       
   def first_play(self):
     options = []
-    play_space = [None]*10
+    play_space = [None]*(RACK_SIZE+1)
     
     for i in range(1, len(play_space) - 1):
       cp_pspace = play_space.copy()

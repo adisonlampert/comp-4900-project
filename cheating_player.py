@@ -35,7 +35,7 @@ class CheatingPlayer(GreedyPlayer):
       if orientation == Orientation.HORIZONTAL:
         curr_tile.set_orientation(Orientation.VERTICAL)
       else:
-        curr_tile.setOrientation(Orientation.HORIZONTAL)
+        curr_tile.set_orientation(Orientation.HORIZONTAL)
       
       play.append((curr_tile, positions[i]))
         
@@ -50,13 +50,30 @@ class CheatingPlayer(GreedyPlayer):
     
   def cheat(self, opponent, board, options):
     diff, best_option = 0, None
-    for option in options:
-      cp_board = Game.update_playable_space(option, deepcopy(board))
+    for indx, option in enumerate(options):
+      print(f"Checking option {indx+1}/{len(options)}")
+
+      orientation, positions, eq, points = option["orientation"], option["positions"], option["play"], option["points"]
+      play = []
+        
+      for indx, curr_tile in enumerate(eq): 
+        if orientation == Orientation.HORIZONTAL:
+          curr_tile.set_orientation(Orientation.VERTICAL)
+        else:
+          curr_tile.set_orientation(Orientation.HORIZONTAL)
+        
+        play.append((curr_tile, positions[indx]))
+
+      cp_board = deepcopy(board)
+      for p in play:
+        cp_board.add_tile(p[0], p[1][0], p[1][1])
+
+      cp_board = Game.update_playable_space(play, cp_board)
       opp_options = opponent.generate_all_options(cp_board)
       _, highest_points, _, _ = opponent.find_highest_play(cp_board, opp_options)
       
-      if option["points"] - highest_points > diff:
-        diff = option["points"] - highest_points
+      if points - highest_points >= diff:
+        diff = points - highest_points
         best_option = option
     
     return best_option
@@ -91,7 +108,7 @@ class CheatingPlayer(GreedyPlayer):
             positions.append((x_pos, y_pos))
             
             coordinates = f"{x_pos},{y_pos}"
-            if coordinates in MULTIPLIERS and board.getTile(x_pos, y_pos) is None:
+            if coordinates in MULTIPLIERS and board.get_tile(x_pos, y_pos) is None:
               mult = MULTIPLIERS[coordinates]
               points += t.get_points() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
               double_eq = double_eq or (mult == "2E")
@@ -116,8 +133,8 @@ class CheatingPlayer(GreedyPlayer):
             highest_positions = positions
     
     return valid_options, {
-      "points": highest_play,
-      "play": highest_points,
+      "play": highest_play,
+      "points": highest_points,
       "orientation": highest_orientation,
       "positions": highest_positions
     }   

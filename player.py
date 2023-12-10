@@ -18,6 +18,9 @@ class Player:
   def get_rack_size(self):
     return len(self.operators) + len(self.negatives) + len(self.integers) + len(self.fractions)
 
+  def get_name(self):
+    return self.name
+  
   def draw_tile(self, tile):
     match tile.get_type():
       case "operator":
