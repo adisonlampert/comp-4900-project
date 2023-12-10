@@ -1,3 +1,5 @@
+BOARD_SIZE = 19
+
 class Orientation:
   HORIZONTAL = "horizontal"
   VERTICAL = "vertical"

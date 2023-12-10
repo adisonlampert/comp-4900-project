@@ -1,7 +1,7 @@
 import random
 from constants import Orientation
 from game import Game
-from simplified_player import SimplifiedPlayer
+from greedy_player import GreedyPlayer
 from player import Player
 from board import Board
 
@@ -49,20 +49,21 @@ class Test:
     game  = Game(player, player)
 
     for _ in range(9):
-      player.drawTile(game.dealTile())
+      player.drawTile(game.deal_tile())
     
     x, y = random.randrange(19), random.randrange(19)
     orientation = Orientation.VERTICAL
     
-    tile = game.dealTile()
+    tile = game.deal_tile()
     tile.setOrientation(orientation)
-    game.addPlayToBoard([(tile, (x, y))])
+    game.add_play_to_board([(tile, (x, y))])
     
     for i in range(19):
       for j in range(19):
-        if game.board.getTile(j, i) != None:
-          tile = game.board.getTile(j,i)
-          print(f'Tile: {tile.getValue()} ({j}, {i}), Orientation: {tile.getOrientation()}')
+        if game.board != None:
+          tile = game.board.get_tile(j,i)
+          if tile is not None:
+            print(f'Tile: {tile.get_value()} ({j}, {i}), Orientation: {tile.get_orientation()}')
 
     play = player.play(game.board)
     
@@ -73,21 +74,21 @@ class Test:
     print(f'Points: {points}')
     
     player = Player()
-    player.validatePlay([p[0] for p in play])
+    player.validate_play([p[0] for p in play])
     
     
   def testFirstPlay(self, player):
     game  = Game(player, player)
 
     for _ in range(9):
-      player.drawTile(game.dealTile())
+      player.draw_tile(game.deal_tile())
       
-    play = player.firstPlay()
+    play = player.first_play()
     
     points = 0
     for p in play:
-      print(f'{p[0].getValue()} {p[1][0], p[1][1]}')
-      points += p[0].getPoints()
+      print(f'{p[0].get_value()} {p[1][0], p[1][1]}')
+      points += p[0].get_points()
     print(f'Points: {points}')
     
     if points == 0:
@@ -101,12 +102,12 @@ test = Test()
 # Tests that the Game class sets the before and after of tiles appropriately
 while(True):
   file = open('data.txt', 'a+') 
-  p1, p2 = SimplifiedPlayer("player1"), SimplifiedPlayer("player2")
+  p1, p2 = GreedyPlayer("player1"), GreedyPlayer("player2")
   g = Game(p1, p2)
-  g.startGame()
+  g.start_game()
   print(g)
 
-  while (g.playRound()):
+  while (g.play_round()):
     print(g)
   file.write(str(g))
   file.close()

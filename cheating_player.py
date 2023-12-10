@@ -1,130 +1,124 @@
 from copy import deepcopy
+from constants import MULTIPLIERS, Orientation
 from game import Game
+from greedy_player import GreedyPlayer
 
-class CheatingPlayer(SimplifiedPlayer):
+class CheatingPlayer(GreedyPlayer):
   def __init__(self, name):
     super().__init__(name)
     
-  def firstPlay(self, board):
-    super().firstPlay(board)
+  def firstPlay(self):
+    return super().first_play()
     
   def play(self, board, opponent):
-    options = super().generateAllOptions(board)
-    validOptions, highestOption = self.validateOptions(board, options)
+    options = super().generate_all_options(board)
+    valid_options, highest_option = self.validate_options(board, options)
     
     print("Finished finding valid options")
     
-    bestOption = self.cheat(opponent, board, validOptions)
+    best_option = self.cheat(opponent, board, valid_options)
     
-    play, orientation, points, positions = 
-      highestOption["play"], 
-      highestOption["orientation"], 
-      highestOption["points"],
-      highestOption["positions"]
+    best_play, orientation, points, positions = highest_option["play"], highest_option["orientation"], highest_option["points"], highest_option["positions"]
       
-    if bestOption != None:
-      play, orientation, points, positions = 
-        bestOption["play"], 
-        bestOption["orientation"], 
-        bestOption["points"],
-        bestOption["positions"]
+    if best_option != None:
+      best_play, orientation, points, positions = best_option["play"], best_option["orientation"], best_option["points"], best_option["positions"]
       
-    returnValue = []
+    play = []
     
-    for i, currTile in enumerate(play):
+    for i, curr_tile in enumerate(best_play):
       if orientation == None:
         break
       
-      if currTile.getOrientation() != None:
-        print(f"Playing on tile {currTile.getValue()}, Before: {currTile.getBefore()}, After: {currTile.getAfter()}")
+      if curr_tile.get_orientation() != None:
+        print(f"Playing on tile {curr_tile.get_value()}, Before: {curr_tile.get_before()}, After: {curr_tile.get_after()}")
         
       if orientation == Orientation.HORIZONTAL:
-        currTile.setOrientation(Orientation.VERTICAL)
+        curr_tile.set_orientation(Orientation.VERTICAL)
       else:
-        currTile.setOrientation(Orientation.HORIZONTAL)
+        curr_tile.setOrientation(Orientation.HORIZONTAL)
       
-      returnValue.append((currTile, positions[i]))
+      play.append((curr_tile, positions[i]))
         
-    super().removePlayedTiles(play)
+    super().remove_played_tiles(best_play)
     
     self.points += points
     
-    if super().getRackSize() == 0:
+    if super().get_rack_size() == 0:
       self.points += 40
 
-    return returnValue
+    return play
     
   def cheat(self, opponent, board, options):
-    diff, bestOption = 0, None
+    diff, best_option = 0, None
     for option in options:
-      cpBoard = Game.updatePlayableSpace(play, deepcopy(board))
-      oppOptions = opponent.generateAllOptions(cpBoard)
-      _, highestPoints, _, _ = opponent.findHighestPlay(cpBoard, oppOptions)
+      cp_board = Game.update_playable_space(option, deepcopy(board))
+      opp_options = opponent.generate_all_options(cp_board)
+      _, highest_points, _, _ = opponent.find_highest_play(cp_board, opp_options)
       
-      if option["points"] - highestPoints > diff:
-        diff = option["points"] - highestPoints
-        bestOption = option
+      if option["points"] - highest_points > diff:
+        diff = option["points"] - highest_points
+        best_option = option
     
-    return bestOption
+    return best_option
     
-  def validateOptions(self, board, options):
-    validOptions = []
-    highestPlay, highestPoints, highestOrientation, highestPositions = [], 0, None, []
+  def validate_options(self, board, options):
+    valid_options = []
+    highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
     
     for option in options:
-      tileX, tileY, orientation = option["location"][0], option["location"][1], option["orientation"]
+      x_tile, y_tile, orientation = option["location"][0], option["location"][1], option["orientation"]
       
-      for eq in option["possibleEquations"]:
-        if super().validatePlay(eq):
+      for eq in option["possible_equations"]:
+        if super().validate_play(eq):
           points, positions = 0, []
-          doubleEquation, tripleEquation = False, False
+          double_eq, triple_eq = False, False
           
-          tileIndex = next((index for (index, tile) in enumerate(eq) if tile.getOrientation() != None), None)
+          tile_index = next((index for (index, tile) in enumerate(eq) if tile.get_orientation() != None), None)
           
-          if tileIndex == None:
+          if tile_index == None:
             break
           
           for i, t in enumerate(eq):
-            points += t.getPoints()
+            points += t.get_points()
             
             if orientation == Orientation.HORIZONTAL:
-              xPos = tileX
-              yPos = tileY-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileY
+              x_pos = x_tile
+              y_pos = y_tile-abs(i-tile_index) if i <= tile_index else abs(i-tile_index)+y_tile
             else:
-              yPos = tileY
-              xPos = tileX-abs(i-tileIndex) if i <= tileIndex else abs(i-tileIndex)+tileX
+              y_pos = y_tile
+              x_pos = x_tile-abs(i-tile_index) if i <= tile_index else abs(i-tile_index)+x_tile
             
-            positions.append((xPos, yPos))
+            positions.append((x_pos, y_pos))
             
-            coordinates = f"{xPos},{yPos}"
-            if coordinates in MULTIPLIERS and board.getTile(xPos, yPos) is None:
+            coordinates = f"{x_pos},{y_pos}"
+            if coordinates in MULTIPLIERS and board.getTile(x_pos, y_pos) is None:
               mult = MULTIPLIERS[coordinates]
-              points += t.getPoints() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
-              doubleEquation = doubleEquation or (mult == "2E")
-              tripleEquation = tripleEquation or (mult == "3E")
+              points += t.get_points() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
+              double_eq = double_eq or (mult == "2E")
+              triple_eq = triple_eq or (mult == "3E")
 
-          if doubleEquation:
+          if double_eq:
             points *= 2
-          if tripleEquation:
+          if triple_eq:
             points *= 3
             
-          validOptions.append({
+          valid_options.append({
             "points": points,
             "play": eq,
             "orientation": orientation,
             "positions": positions
           })
           
-          if points > highestPoints:
-            highestPoints = points
-            highestPlay = eq
-            highestOrientation = orientation
-            highestPositions = positions
+          if points > highest_points:
+            highest_points = points
+            highest_play = eq
+            highest_orientation = orientation
+            highest_positions = positions
     
-    return validOptions, {
-      "points": highestPlay,
-      "play": highestPoints,
-      "orientation": highestOrientation,
-      "positions": highestPositions
+    return valid_options, {
+      "points": highest_play,
+      "play": highest_points,
+      "orientation": highest_orientation,
+      "positions": highest_positions
     }   
         

@@ -9,19 +9,17 @@ class Player:
     self.fractions = []
     self.points = 0
 
-  def getRack(self):
+  def get_rack(self):
     return self.operators + self.negatives + self.integers + self.fractions
   
-  def getPoints(self):
+  def get_points(self):
     return self.points
-  
-  def
 
-  def getRackSize(self):
+  def get_rack_size(self):
     return len(self.operators) + len(self.negatives) + len(self.integers) + len(self.fractions)
 
-  def drawTile(self, tile):
-    match tile.getType():
+  def draw_tile(self, tile):
+    match tile.get_type():
       case "operator":
         self.operators.append(tile)
       case "negative":
@@ -31,39 +29,27 @@ class Player:
       case "fraction":
         self.fractions.append(tile)
 
-  def addPoints(self, points):
+  def add_points(self, points):
     self.points += points
 
   def play(self, board, opponent):
     '''
-    Board is 2D array
-    Each entry of the array will look like
-    {
-      multiplier: string
-        - "" if no multiplier,
-        - "2S" = 2x symbol score,
-        - "3S" = 3x symbol score,
-        - "2E" = 2x equation score, 
-        - "3E = 3x equation score
-      value: None || Tile
-    }
-
     This method will create a tile for the equal symbol and include it
     in the returned array
 
     Return an array of tuples (ordered left to right or up to down):
     [(Tile, (x_pos, y_pos))]
-    
     '''
 
     return []
   
-  def validatePlay(self, play):
+  def validate_play(self, play):
     # Format fractions
     eq = []
     for i in range(len(play)):
-      curr = play[i].getValue()
+      curr = play[i].get_value()
       eq.append(curr)
+      
       if "/" in curr and i > 0:
         if eq[i-1].isnumeric():
           for j in range(i-1,-1,-1):
@@ -85,18 +71,15 @@ class Player:
 
     # Get the value of the expressions to compare
     try:
-      leftExpression = float(eval(expressions[0]))
-      rightExpression = float(eval(expressions[1]))
+      left_expression = float(eval(expressions[0]))
+      right_expression = float(eval(expressions[1]))
     except:
       return False
-    
-    if leftExpression != rightExpression:
-      return False
 
-    return leftExpression == rightExpression
+    return left_expression == right_expression
 
-  def getPlayableTiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
-    match (before.getType() if before is not None else None, after.getType() if after is not None else None):
+  def get_playable_tiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
+    match (before.get_type() if before is not None else None, after.get_type() if after is not None else None):
       case ("operator", "operator"):
         return integers + fractions
       case ("operator", "negative"):
