@@ -3,31 +3,74 @@ import math
 from player import Player
 from constants import Orientation, MULTIPLIERS, BOARD_SIZE, RACK_SIZE
 from tile import Tile
+import multiprocessing
+from itertools import chain
 
 class GreedyPlayer(Player):
   def __init__(self, name):
     super().__init__(name)
-    
+    self.num_processes = round(multiprocessing.cpu_count()/2)
+
   def generate_all_options(self, board):
-    options = []
-    tile = None
+    def args_generator():
+      for y_pos in range(BOARD_SIZE):
+        for x_pos in range(BOARD_SIZE): 
+          tile = board.get_tile(x_pos, y_pos)
 
-    for y_pos in range(BOARD_SIZE):
-      for x_pos in range(BOARD_SIZE): 
-        tile = board.get_tile(x_pos, y_pos)
+          if tile is None or not tile.is_playable():
+            continue
+          
+          play_space = self.generate_play_space(tile)
 
-        if tile is None or not tile.is_playable():
-          continue
-        
-        # print(f'Checking new tile {tile.get_value()} {x_pos, y_pos}, Before: {tile.get_before()}, After: {tile.get_after()}')
-        
-        playSpace = self.generate_play_space(tile)
-        options += self.generate_options(playSpace, tile, x_pos, y_pos)
-        
+          yield (play_space, tile, x_pos, y_pos)
+
+    with multiprocessing.Pool(processes=self.num_processes) as pool:
+      options = list(chain.from_iterable(pool.map(self.generate_options, args_generator())))
+
     return options
   
+  def format_play(self, args):
+    eq, orientation, x_tile, y_tile, board = args
+    points, positions = 0, []
+    double_eq, triple_eq = False, False
+    tile_index = next((index for (index, tile) in enumerate(eq) if tile.get_orientation() != None), None)
+
+    if tile_index == None:
+      return None
+    
+    # Iterate through tiles in the equation
+    for indx, tile in enumerate(eq):
+      points += tile.get_points()
+      
+      # Calculate the position of the tile based on orientation
+      offset = abs(indx-tile_index)
+      if orientation == Orientation.HORIZONTAL:
+        x_pos = x_tile
+        y_pos = y_tile-offset if indx <= tile_index else offset+y_tile
+      else:
+        x_pos = x_tile-offset if indx <= tile_index else offset+x_tile
+        y_pos = y_tile
+      
+      positions.append((x_pos, y_pos))
+      
+      if (x_pos, y_pos) in MULTIPLIERS and board.get_tile(x_pos, y_pos) is None:
+        mult = MULTIPLIERS[(x_pos, y_pos)]
+        points += tile.get_points() * (1 if mult == "2S" else 2 if mult == "3S" else 0)
+        double_eq = double_eq or (mult == "2E")
+        triple_eq = triple_eq or (mult == "3E")
+
+
+    # Apply multiplier bonuses
+    if double_eq:
+      points *= 2
+    if triple_eq:
+      points *= 3
+
+    return (points, eq, orientation, positions)
+  
   def find_highest_play(self, board, options):
-    highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
+    args = []
+    pool = multiprocessing.Pool(processes=self.num_processes)
     
     # Iterate through each option in the list of play options
     for option in options:
@@ -35,61 +78,39 @@ class GreedyPlayer(Player):
       
       # Iterate through possible equations for the current option
       for eq in option["possible_equations"]:
-        points, positions = 0, []
-        double_eq, triple_eq = False, False
-        tile_index = next((index for (index, tile) in enumerate(eq) if tile.get_orientation() != None), None)
-        
-        if tile_index == None:
-          break
-        
-        # Iterate through tiles in the equation
-        for indx, tile in enumerate(eq):
-          points += tile.get_points()
-          
-          # Calculate the position of the tile based on orientation
-          if orientation == Orientation.HORIZONTAL:
-            x_pos = x_tile
-            y_pos = y_tile-abs(indx-tile_index) if indx <= tile_index else abs(indx-tile_index)+y_tile
-          else:
-            x_pos = x_tile-abs(indx-tile_index) if indx <= tile_index else abs(indx-tile_index)+x_tile
-            y_pos = y_tile
-          
-          positions.append((x_pos, y_pos))
-          
-          coordinates = f"{x_pos},{y_pos}"
-          if coordinates in MULTIPLIERS and board.get_tile(x_pos, y_pos) is None:
-            mult = MULTIPLIERS[coordinates]
-            points += tile.get_points() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
-            double_eq = double_eq or (mult == "2E")
-            triple_eq = triple_eq or (mult == "3E")
+        args.append((eq, orientation, x_tile, y_tile, board))
 
-        # Apply multiplier bonuses
-        if double_eq:
-          points *= 2
-        if triple_eq:
-          points *= 3
-        
-        # Update highest play if the current points exceed the current highest
-        if points > highest_points:
-          if super().validate_play(eq):
-            highest_points = points
-            highest_play = eq
-            highest_orientation = orientation
-            highest_positions = positions
+    plays = pool.map(self.format_play, args)
+    pool.terminate()
+    pool.join()
+
+    del args
+
+    highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
+
+    for points, eq, orientation, positions in plays:
+      # Update highest play if the current points exceed the current highest
+      if points > highest_points:
+        if super().validate_play(eq):
+          highest_points = points
+          highest_play = eq
+          highest_orientation = orientation
+          highest_positions = positions
+
+    if len(highest_play) == RACK_SIZE+2:
+      highest_points += 40
     
     return highest_play, highest_points, highest_orientation, highest_positions
   
   def play(self, board, _):
     options = self.generate_all_options(board)
     highest_play, highest_points, highest_orientation, highest_positions = self.find_highest_play(board, options)
+    del options
     
     play = []
     for i, curr_tile in enumerate(highest_play):
       if highest_orientation == None:
         break
-      
-      if curr_tile.get_orientation() != None:
-        print(f"Playing on tile {curr_tile.get_value()}, Before: {curr_tile.get_before()}, After: {curr_tile.get_after()}")
         
       if highest_orientation == Orientation.HORIZONTAL:
         curr_tile.set_orientation(Orientation.VERTICAL)
@@ -101,8 +122,6 @@ class GreedyPlayer(Player):
     self.remove_played_tiles(highest_play)
     
     self.points += highest_points
-    if super().get_rack_size() == 0:
-      self.points += 40
 
     return play
               
@@ -120,7 +139,8 @@ class GreedyPlayer(Player):
       play_space.append(None)
     return play_space
   
-  def generate_options(self, play_space, tile, x_pos, y_pos):
+  def generate_options(self, args):
+    play_space, tile, x_pos, y_pos = args
     options = []
     
     for i in range(1, len(play_space) - 1):
@@ -132,8 +152,9 @@ class GreedyPlayer(Player):
 
       cp_pspace = play_space.copy()
       cp_pspace[i] = Tile("=", 0, "equals")
-      possible_arrangements = []
 
+      possible_arrangements = []
+      
       # Operators cannot be the first or last symbol of the equation so our range changes
       space =  False
       if tile.get_type() == "operator" or tile.get_type() == "negative":
@@ -145,12 +166,12 @@ class GreedyPlayer(Player):
           for k in range(a_range, min(j+12, len(cp_pspace)+1)):
             possible_arrangements.append(cp_pspace[j:k])
       else:
-        bRange = min(RACK_SIZE+1, tile.get_before()) if not space else min(RACK_SIZE+1, tile.get_before())-1
-        for j in range(0, bRange):
+        b_range = min(RACK_SIZE+1, tile.get_before())+1 if not space else min(RACK_SIZE+1, tile.get_before())
+        for j in range(0, b_range):
           for k in range(i+2, min(j+12, len(cp_pspace)+1)):
             possible_arrangements.append(cp_pspace[j:k])
             
-      possibilities = self.generate_possible_equations(possible_arrangements)
+      possibilities = list(self.generate_possible_equations(possible_arrangements))
       options.append({"location": (x_pos, y_pos), "orientation": tile.get_orientation(), "possible_equations": possibilities})
       
     return options
@@ -163,44 +184,42 @@ class GreedyPlayer(Player):
       none_indices = [i for i, x in enumerate(arrangement) if x is None]
       
       # Start the recursive generation process
-      self.generate_partial_equations(arrangement.copy(), none_indices, integers, fractions, negatives, operators, possibilities)
+      possibilities = self.generate_partial_equations(arrangement.copy(), none_indices, integers, fractions, negatives, operators)
+      del integers, fractions, negatives, operators
         
     return possibilities
   
-  def generate_partial_equations(self, curr_eq, remaining_none_indices, integers, fractions, negatives, operators, possibilities):
+  def generate_partial_equations(self, curr_eq, remaining_none_indices, integers, fractions, negatives, operators):
     if not remaining_none_indices:
-      # If there are no remaining None indices, check if the equation is valid
-      possibilities.append(curr_eq.copy())
+      yield curr_eq.copy()
       return
 
-    # Get the next None index to fill
     next_none_index = remaining_none_indices[0]
 
-    # Get playable tiles for the current position
     before = curr_eq[next_none_index-1] if next_none_index-1 >= 0 else None
     after = curr_eq[next_none_index+1] if next_none_index+1 < len(curr_eq) else None
-          
+
     if next_none_index == len(curr_eq)-1:
       playable_tiles = super().get_playable_tiles(integers, fractions, negatives, operators, before=before, after=after, last=True)
     else:
       playable_tiles = super().get_playable_tiles(integers, fractions, negatives, operators, before=before, after=after)
           
+          
     # Return and don't add equation if there are no playable tiles
     if len(playable_tiles) == 0:
       return
-    
+
     for tile in playable_tiles:
       curr_eq[next_none_index] = tile
-      
+        
       # Create new lists without the tile we just played
       def cp_rack(rack):
         return [t for t in rack if t != tile]
-      
+
       integers_copy, fractions_copy, negatives_copy, operators_copy =  cp_rack(integers), cp_rack(fractions), cp_rack(negatives), cp_rack(operators)
-      
-      # Generate permutations for the remaining None indices
-      self.generate_partial_equations(curr_eq, remaining_none_indices[1:], integers_copy, fractions_copy, negatives_copy, operators_copy, possibilities)
-      
+
+      yield from self.generate_partial_equations(curr_eq, remaining_none_indices[1:], integers_copy, fractions_copy, negatives_copy, operators_copy)
+
       curr_eq[next_none_index] = None  # Backtrack
       
   def first_play(self):
@@ -222,19 +241,18 @@ class GreedyPlayer(Player):
     highest_play, highest_points, highest_positions = [], 0, []
     for option in options: 
       double_eq, triple_eq = False, False
-      x_val = 9-math.floor(len(highest_play)/2)
+      x_val = 9-math.floor(len(option)/2)
       points = 0
       positions = []
       for tile in option:
         points += tile.get_points()
         positions.append((x_val, 9))
         
-        coordinates = f"{x_val},9" 
-        if coordinates in MULTIPLIERS:
-          mult = MULTIPLIERS[coordinates]
-          points += tile.get_points() * (2 if mult == "2S" else 3 if mult == "3S" else 1)
+        if (x_val,9) in MULTIPLIERS:
+          mult = MULTIPLIERS[(x_val,9)]
+          points += tile.get_points() * (1 if mult == "2S" else 2 if mult == "3S" else 0)
           double_eq = double_eq or (mult == "2E")
-          triple_eq= triple_eq or (mult == "3E") 
+          triple_eq = triple_eq or (mult == "3E") 
           
         x_val +=1
 
