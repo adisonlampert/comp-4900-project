@@ -77,9 +77,9 @@ class Player:
       left_expression = float(eval(expressions[0]))
       right_expression = float(eval(expressions[1]))
     except:
-      return False
+      return "", False
 
-    return left_expression == right_expression
+    return equation, left_expression == right_expression 
 
   def get_playable_tiles(self, integers, fractions, negatives, operators, before = None, after = None, last=False):
     match (before.get_type() if before is not None else None, after.get_type() if after is not None else None):

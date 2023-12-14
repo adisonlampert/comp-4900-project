@@ -36,7 +36,7 @@ class Game:
     self.add_play_to_board(play)
     
     # Draw additional tiles for the current player based on the first play
-    for _ in range(len(play)-1):
+    while self.turn.get_rack_size() != RACK_SIZE:
       self.turn.draw_tile(self.deal_tile())
     
     # Switch the current player and opponent  
@@ -57,7 +57,7 @@ class Game:
     self.add_play_to_board(play)
     
     # Draw additional tiles for the current player based on the play
-    for _ in range(len(play)-2):
+    while self.turn.get_rack_size() != RACK_SIZE:
       if len(self.tiles) == 0:
         break
       

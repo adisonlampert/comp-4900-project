@@ -9,7 +9,8 @@ from itertools import chain
 class GreedyPlayer(Player):
   def __init__(self, name):
     super().__init__(name)
-    self.num_processes = round(multiprocessing.cpu_count()/2)
+    self.num_processes = multiprocessing.cpu_count()
+    self.already_generated = set()
 
   def generate_all_options(self, board):
     def args_generator():
@@ -59,16 +60,18 @@ class GreedyPlayer(Player):
         double_eq = double_eq or (mult == "2E")
         triple_eq = triple_eq or (mult == "3E")
 
-
     # Apply multiplier bonuses
     if double_eq:
       points *= 2
     if triple_eq:
       points *= 3
 
+    if len(eq) == RACK_SIZE+2:
+      points += 40
+
     return (points, eq, orientation, positions)
   
-  def find_highest_play(self, board, options):
+  def format_plays(self, board, options):
     args = []
     pool = multiprocessing.Pool(processes=self.num_processes)
     
@@ -84,21 +87,23 @@ class GreedyPlayer(Player):
     pool.terminate()
     pool.join()
 
-    del args
+    return plays
+
+  def find_highest_play(self, board, options):
+    plays = self.format_plays(board, options)
 
     highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
 
     for points, eq, orientation, positions in plays:
       # Update highest play if the current points exceed the current highest
       if points > highest_points:
-        if super().validate_play(eq):
-          highest_points = points
-          highest_play = eq
-          highest_orientation = orientation
-          highest_positions = positions
+        highest_points = points
+        highest_play = eq
+        highest_orientation = orientation
+        highest_positions = positions
 
-    if len(highest_play) == RACK_SIZE+2:
-      highest_points += 40
+    if highest_points == 0:
+      print("No valid plays")
     
     return highest_play, highest_points, highest_orientation, highest_positions
   
@@ -172,22 +177,25 @@ class GreedyPlayer(Player):
             possible_arrangements.append(cp_pspace[j:k])
             
       possibilities = list(self.generate_possible_equations(possible_arrangements))
+      self.already_generated = set()
       options.append({"location": (x_pos, y_pos), "orientation": tile.get_orientation(), "possible_equations": possibilities})
       
     return options
     
   def generate_possible_equations(self, possible_arrangements):
-    possibilities = []
-    
     for arrangement in possible_arrangements:      
-      integers, fractions, negatives, operators = deepcopy(self.integers), deepcopy(self.fractions), deepcopy(self.negatives), deepcopy(self.operators)     
+      integers, fractions, negatives, operators = self.integers.copy(), self.fractions.copy(), self.negatives.copy(), self.operators.copy()   
       none_indices = [i for i, x in enumerate(arrangement) if x is None]
       
       # Start the recursive generation process
       possibilities = self.generate_partial_equations(arrangement.copy(), none_indices, integers, fractions, negatives, operators)
+      for p in possibilities:
+        eq, valid = super().validate_play(p)
+        if valid and eq not in self.already_generated:
+          self.already_generated.add(eq)
+          yield p
+
       del integers, fractions, negatives, operators
-        
-    return possibilities
   
   def generate_partial_equations(self, curr_eq, remaining_none_indices, integers, fractions, negatives, operators):
     if not remaining_none_indices:
