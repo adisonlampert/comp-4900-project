@@ -5,7 +5,7 @@ import cProfile, pstats, io
 
 def profiled_play():
   while True:
-    p1, p2 = GreedyPlayer("Greedy Player 1"), GreedyPlayer("Greedy Player 2")
+    p1, p2 = CheatingPlayer("Cheating Player 1"), GreedyPlayer("Greedy Player 2")
     g = Game(p1, p2)
     g.start_game()
     print(g)
@@ -13,7 +13,7 @@ def profiled_play():
     while (g.play_round()):
       print(g)
 
-    with open('game_result.txt', 'a+') as f:
+    with open('cheating_data.txt', 'a+') as f:
       f.write(f"{p1.get_points()}, {p2.get_points()}\n")
 
 if __name__ == "__main__":

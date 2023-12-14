@@ -12,13 +12,16 @@ class GreedyPlayer(Player):
     self.num_processes = multiprocessing.cpu_count()
     self.already_generated = set()
 
-  def generate_all_options(self, board):
+  def generate_all_options(self, board, prev_options = {}):
     def args_generator():
       for y_pos in range(BOARD_SIZE):
         for x_pos in range(BOARD_SIZE): 
           tile = board.get_tile(x_pos, y_pos)
 
           if tile is None or not tile.is_playable():
+            continue
+          
+          if (x_pos, y_pos, tile.get_before(), tile.get_after()) in prev_options:
             continue
           
           play_space = self.generate_play_space(tile)
@@ -69,7 +72,7 @@ class GreedyPlayer(Player):
     if len(eq) == RACK_SIZE+2:
       points += 40
 
-    return (points, eq, orientation, positions)
+    return (points, eq, orientation, positions, tile_index)
   
   def format_plays(self, board, options):
     args = []
@@ -89,27 +92,36 @@ class GreedyPlayer(Player):
 
     return plays
 
-  def find_highest_play(self, board, options):
+  def find_highest_play(self, board, options, prev_options = []):
     plays = self.format_plays(board, options)
 
     highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
-
-    for points, eq, orientation, positions in plays:
-      # Update highest play if the current points exceed the current highest
+    
+    for points, eq, orientation, positions in prev_options:
       if points > highest_points:
         highest_points = points
         highest_play = eq
         highest_orientation = orientation
         highest_positions = positions
 
+    for points, eq, orientation, positions, tile_index in plays:
+      # Update highest play if the current points exceed the current highest
+      if points > highest_points:
+        highest_points = points
+        highest_play = eq
+        highest_orientation = orientation
+        highest_positions = positions
+        
+      prev_options[(positions[0][0], positions[0][1], eq[tile_index].get_before(), eq[tile_index].get_after())] = (points, eq, orientation, positions)
+
     if highest_points == 0:
       print("No valid plays")
     
-    return highest_play, highest_points, highest_orientation, highest_positions
+    return highest_play, highest_points, highest_orientation, highest_positions, prev_options
   
   def play(self, board, _):
     options = self.generate_all_options(board)
-    highest_play, highest_points, highest_orientation, highest_positions = self.find_highest_play(board, options)
+    highest_play, highest_points, highest_orientation, highest_positions, _ = self.find_highest_play(board, options)
     del options
     
     play = []

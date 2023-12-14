@@ -218,64 +218,6 @@ class Game:
         break
 
     return board
-    # Adjust before and after distances based on the start and end positions
-    if start_pos == 0:
-      b_dists = [18] + b_dists
-      a_dists = [18] + a_dists
-    if end_pos == 18:
-      b_dists = b_dists + [18]
-      a_dists = a_dists + [18]
-
-    # Iterate through each tile in the play
-    for i in range(len(play)):
-      tile, x_pos, y_pos = play[i][0], play[i][1][0], play[i][1][1]
-      
-      # Check if the tile is a blank tile or has a defined before value
-      if tile.get_value() == "=" or tile.get_before() is not None:
-        board.update_tile_before(x_pos, y_pos, 0)
-        board.update_tile_after(x_pos, y_pos, 0)
-        print("a: ", x_pos, y_pos)
-      else:
-        # Update before and after values based on the minimum distances
-        print(x_pos, y_pos)
-        board.update_tile_before(x_pos, y_pos, min(*b_dists[i:i+3]))
-        board.update_tile_after(x_pos, y_pos, min(*a_dists[i:i+3]))
-
-
-      # Check and update adjacent tiles
-      if x_pos < 18:
-        if y_pos > 0:
-          if board.get_tile(x_pos+1, y_pos-1) is not None:
-            if orientation == Orientation.HORIZONTAL:
-              board.update_tile_before(x_pos, y_pos, 0)
-              board.update_tile_before(x_pos+1, y_pos-1, 0)
-            else:
-              board.update_tile_after(x_pos, y_pos, 0)
-              board.update_tile_after(x_pos+1, y_pos-1, 0)
-            print("b: ", x_pos, y_pos)
-        if y_pos < 18:
-          if board.get_tile(x_pos+1, y_pos+1) is not None:
-            board.update_tile_after(x_pos, y_pos, 0)
-            board.update_tile_before(x_pos+1, y_pos+1, 0)
-            print("c: ", x_pos, y_pos)
-
-      if x_pos > 0:
-        if y_pos > 0:
-          if board.get_tile(x_pos-1, y_pos-1) is not None:
-            board.update_tile_before(x_pos, y_pos, 0)
-            board.update_tile_after(x_pos-1, y_pos-1, 0)
-            print("d: ", x_pos, y_pos)
-        if y_pos < 18:
-          if board.get_tile(x_pos-1, y_pos+1) is not None:
-            if orientation == Orientation.HORIZONTAL:
-              board.update_tile_after(x_pos, y_pos, 0)
-              board.update_tile_after(x_pos-1, y_pos+1, 0)
-            else:
-              board.update_tile_before(x_pos, y_pos, 0)
-              board.update_tile_before(x_pos-1, y_pos+1, 0)
-            print("e: ", x_pos, y_pos)
-              
-    return board
   
   @staticmethod 
   def update_inline_after(position1, position2, orientation, board):
@@ -361,14 +303,14 @@ class Game:
         
         # Check if there is a tile at that position on the board
         if tile:
-          newOffset = static_pos-j-2
+          new_before = static_pos-j-2
           
           # Update before value if orientation matches
           if tile.get_orientation() == orientation and tile.get_value() != "=":
-            board.update_tile_after(i, j, newOffset) if orientation == Orientation.HORIZONTAL else board.update_tile_after(j, i, newOffset)
+            board.update_tile_after(i, j, new_before) if orientation == Orientation.HORIZONTAL else board.update_tile_after(j, i, newOffset)
           
           # Append the calculated distance
-          dists.append(newOffset)
+          dists.append(new_before)
           break
       
       # If no tile is found, append the distance from the tile in the play to the edge of the board 
