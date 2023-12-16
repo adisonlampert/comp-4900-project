@@ -45,10 +45,18 @@ class CheatingPlayer(GreedyPlayer):
     diff, best_option = 0, None
     highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
     overall_highest_opp_points, overall_opp_pos, skip_pos, overall_opp_len = 0, (-1, -1), (-1, -1), set()
-    opp_plays = []
+    opp_plays =  {}
 
     for indx, option in enumerate(options):
-      points, eq, orientation, positions = option
+      points, eq, orientation, positions, _ = option
+
+      print(f"Checking option {indx+1}/{len(options)}")
+
+      if points > highest_points:
+        highest_points = points
+        highest_play = eq
+        highest_orientation = orientation
+        highest_positions = positions
 
       if points < 10 or points < diff: # If we can't get 10 points, don't bother
         continue
@@ -56,15 +64,7 @@ class CheatingPlayer(GreedyPlayer):
       if skip_pos == positions[0] and len(option) in overall_opp_len: # We know that this position does not change the outcome
         continue
 
-      print(f"Checking option {indx+1}/{len(options)}")
-
       play = []
-
-      if points > highest_points:
-        highest_points = points
-        highest_play = eq
-        highest_orientation = orientation
-        highest_positions = positions
         
       for indx, curr_tile in enumerate(eq): 
         if orientation == Orientation.HORIZONTAL:
