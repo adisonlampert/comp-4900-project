@@ -307,7 +307,7 @@ class Game:
           
           # Update before value if orientation matches
           if tile.get_orientation() == orientation and tile.get_value() != "=":
-            board.update_tile_after(i, j, new_before) if orientation == Orientation.HORIZONTAL else board.update_tile_after(j, i, newOffset)
+            board.update_tile_after(i, j, new_before) if orientation == Orientation.HORIZONTAL else board.update_tile_after(j, i, new_before)
           
           # Append the calculated distance
           dists.append(new_before)

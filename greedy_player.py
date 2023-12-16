@@ -10,9 +10,10 @@ class GreedyPlayer(Player):
   def __init__(self, name):
     super().__init__(name)
     self.num_processes = multiprocessing.cpu_count()
+    print(self.num_processes)
     self.already_generated = set()
 
-  def generate_all_options(self, board, prev_options = {}):
+  def generate_all_options(self, board, prev_plays = {}):
     def args_generator():
       for y_pos in range(BOARD_SIZE):
         for x_pos in range(BOARD_SIZE): 
@@ -21,7 +22,8 @@ class GreedyPlayer(Player):
           if tile is None or not tile.is_playable():
             continue
           
-          if (x_pos, y_pos, min(RACK_SIZE, tile.get_before()), min(RACK_SIZE, tile.get_after())) in prev_options:
+          tile_value, tile_before, tile_after = tile.get_value(), min(RACK_SIZE, tile.get_before()), min(RACK_SIZE, tile.get_after())
+          if (tile_value, tile_before, tile_after) in prev_plays:
             continue
           
           play_space = self.generate_play_space(tile)
@@ -92,17 +94,26 @@ class GreedyPlayer(Player):
 
     return plays
 
-  def find_highest_play(self, board, options, prev_options = {}):
+  def find_highest_play(self, board, options, prev_plays = {}):
     plays = self.format_plays(board, options)
 
     highest_play, highest_points, highest_orientation, highest_positions = [], 0, None, []
     
-    for points, eq, orientation, positions in prev_options:
-      if points > highest_points:
-        highest_points = points
-        highest_play = eq
-        highest_orientation = orientation
-        highest_positions = positions
+    for y_pos in range(BOARD_SIZE):
+        for x_pos in range(BOARD_SIZE): 
+          tile = board.get_tile(x_pos, y_pos)
+
+          if tile is None or not tile.is_playable():
+            continue
+          
+          tile_value, tile_before, tile_after = tile.get_value(), min(RACK_SIZE, tile.get_before()), min(RACK_SIZE, tile.get_after())
+          if (tile_value, tile_before, tile_after) in prev_plays:
+            points, eq, orientation, positions = prev_plays[(tile_value, tile_before, tile_after)]
+            if points > highest_points:
+              highest_points = points
+              highest_play = eq
+              highest_orientation = orientation
+              highest_positions = positions
 
     for points, eq, orientation, positions, tile_index in plays:
       # Update highest play if the current points exceed the current highest
@@ -111,17 +122,19 @@ class GreedyPlayer(Player):
         highest_play = eq
         highest_orientation = orientation
         highest_positions = positions
-        
-      prev_options[(positions[0][0], positions[0][1], eq[tile_index].get_before(), eq[tile_index].get_after())] = (points, eq, orientation, positions)
-
-      prev_play_key = (positions[0][0], positions[0][1], min(RACK_SIZE, eq[tile_index].get_before()), min(RACK_SIZE, eq[tile_index].get_after()))
-      if prev_play_key not in prev_options or prev_options[prev_play_key][0] < points:  
-        prev_options[prev_play_key] = (points, eq, orientation, positions)
+      
+      tile_value, tile_before, tile_after = eq[tile_index].get_value(), min(RACK_SIZE, eq[tile_index].get_before()), min(RACK_SIZE, eq[tile_index].get_after())
+      if (tile_value, tile_before, tile_after) not in prev_plays:
+        prev_plays[(tile_value, tile_before, tile_after)] = points, eq, orientation, positions
+      else:
+        pts, _, _, _ = prev_plays[(tile_value, tile_before, tile_after)]
+        if points > pts:
+          prev_plays[(tile_value, tile_before, tile_after)] = points, eq, orientation, positions
 
     if highest_points == 0:
       print("No valid plays")
     
-    return highest_play, highest_points, highest_orientation, highest_positions, prev_options
+    return highest_play, highest_points, highest_orientation, highest_positions, prev_plays
   
   def play(self, board, _):
     options = self.generate_all_options(board)

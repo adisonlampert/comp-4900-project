@@ -1,5 +1,5 @@
 BOARD_SIZE = 19
-RACK_SIZE = 9
+RACK_SIZE = 8
 
 class Orientation:
   HORIZONTAL = "horizontal"
