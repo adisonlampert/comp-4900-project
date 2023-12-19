@@ -10,35 +10,42 @@ class Tile:
     self.after = None
     self.type = type
 
-  def getValue(self):
+  def get_value(self):
     return self.value
   
-  def getPoints(self):
+  def get_points(self):
     return self.points
   
-  def getOrientation(self):
+  def get_orientation(self):
     return self.orientation
   
-  def getBefore(self):
+  def get_before(self):
     return self.before
   
-  def getAfter(self):
+  def get_after(self):
     return self.after
 
-  def getType(self):
+  def get_type(self):
     return self.type
   
-  def isPlayable(self):
-    return self.after+self.before > 1
-  
-  def setOrientation(self, orientation):
+  def is_playable(self):
+    if self.before != None and self.after != None:
+      return self.after+self.before > 1 and not (self.type == "operator" and (self.before == 0 or self.after == 0))
+    else:
+      return False
+    
+  def set_orientation(self, orientation):
     self.orientation = orientation
 
-  def setBefore(self, before):
-    self.before = before
+  def set_before(self, before):
+    if self.before == None or before < self.before:
+      self.before = before
+    self.before = max(self.before, 0)
 
-  def setAfter(self, after):
-    self.after = after
+  def set_after(self, after):
+    if self.after == None or after < self.after:
+      self.after = after
+    self.after = max(self.after, 0)
   
   def __str__(self):
     return f'{self.value}'

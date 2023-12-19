@@ -1,1 +1,2 @@
-# comp-4900-project
+# Opponent Modeling in Equate
+Project for COMP 4900: Multiagent Systems
