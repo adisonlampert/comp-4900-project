@@ -228,45 +228,45 @@ class GreedyPlayer(Player):
       curr_eq[next_none_index] = None  # Backtrack
   
     def format_play(self, args):
-    eq, orientation, x_tile, y_tile, board = args
-    points, positions = 0, []
-    double_eq, triple_eq = False, False
-    tile_index = next((index for (index, tile) in enumerate(eq) if tile.get_orientation() != None), None)
+      eq, orientation, x_tile, y_tile, board = args
+      points, positions = 0, []
+      double_eq, triple_eq = False, False
+      tile_index = next((index for (index, tile) in enumerate(eq) if tile.get_orientation() != None), None)
 
-    if tile_index == None:
-      return None
-    
-    # Iterate through tiles in the equation
-    for indx, tile in enumerate(eq):
-      points += tile.get_points()
+      if tile_index == None:
+        return None
       
-      # Calculate the position of the tile based on orientation
-      offset = abs(indx-tile_index)
-      if orientation == Orientation.HORIZONTAL:
-        x_pos = x_tile
-        y_pos = y_tile-offset if indx <= tile_index else offset+y_tile
-      else:
-        x_pos = x_tile-offset if indx <= tile_index else offset+x_tile
-        y_pos = y_tile
-      
-      positions.append((x_pos, y_pos))
-      
-      if (x_pos, y_pos) in MULTIPLIERS and board.get_tile(x_pos, y_pos) is None:
-        mult = MULTIPLIERS[(x_pos, y_pos)]
-        points += tile.get_points() * (1 if mult == "2S" else 2 if mult == "3S" else 0)
-        double_eq = double_eq or (mult == "2E")
-        triple_eq = triple_eq or (mult == "3E")
+      # Iterate through tiles in the equation
+      for indx, tile in enumerate(eq):
+        points += tile.get_points()
+        
+        # Calculate the position of the tile based on orientation
+        offset = abs(indx-tile_index)
+        if orientation == Orientation.HORIZONTAL:
+          x_pos = x_tile
+          y_pos = y_tile-offset if indx <= tile_index else offset+y_tile
+        else:
+          x_pos = x_tile-offset if indx <= tile_index else offset+x_tile
+          y_pos = y_tile
+        
+        positions.append((x_pos, y_pos))
+        
+        if (x_pos, y_pos) in MULTIPLIERS and board.get_tile(x_pos, y_pos) is None:
+          mult = MULTIPLIERS[(x_pos, y_pos)]
+          points += tile.get_points() * (1 if mult == "2S" else 2 if mult == "3S" else 0)
+          double_eq = double_eq or (mult == "2E")
+          triple_eq = triple_eq or (mult == "3E")
 
-    # Apply multiplier bonuses
-    if double_eq:
-      points *= 2
-    if triple_eq:
-      points *= 3
+      # Apply multiplier bonuses
+      if double_eq:
+        points *= 2
+      if triple_eq:
+        points *= 3
 
-    if len(eq) == RACK_SIZE+2:
-      points += 40
+      if len(eq) == RACK_SIZE+2:
+        points += 40
 
-    return (points, eq, orientation, positions, tile_index)
+      return (points, eq, orientation, positions, tile_index)
   
   def format_plays(self, board, options):
     args = []
