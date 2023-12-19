@@ -8,10 +8,10 @@ class Tile:
         self.x = x
         self.y = y
 
-    def getX(self):
+    def get_x(self):
         return self.x
     
-    def getY(self):
+    def get_y(self):
         return self.y
     
     def draw(self, screen, x, y):
@@ -33,6 +33,7 @@ class Tile:
 
         # Render the points text
         points_text = points_font.render(str(self.points), True, styles.BLACK)
+
         # Adjust bottom right position for points text
         points_text_x = x + tile_size - divider_size - 3
         points_text_y = y + tile_size - divider_size

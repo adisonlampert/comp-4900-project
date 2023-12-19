@@ -7,79 +7,87 @@ class EquateGame:
         pygame.init()
 
     def play(self):
+        # pygame init
         screen = pygame.display.set_mode((760, 840))
         clock = pygame.time.Clock()
         pygame.display.set_caption("Equate Board Game")
         running = True
 
+        # Initialize board
         board = EquateBoard()
-        board.initBoard()
-        plays = board.seedPlays()
+        board.init_board()
+        plays = board.seed_plays()
 
-        p1Rack = plays[0]["player1Rack"]
-        p2Rack = plays[0]["player2Rack"]
-        p1Points = 0
-        p2Points = 0
+        # Initialize game state
+        p1_rack = plays[0]["player1Rack"]
+        p2_rack = plays[0]["player2Rack"]
+        p1_points = 0
+        p2_points = 0
 
         tiles_on_board = []
 
-        playIndex = 1
+        play_index = 1
         tile_index = 0
         start_delay_time = None
         pause_after_play = False
 
+        # Game loop
         while running:
             current_time = pygame.time.get_ticks()
 
+            # Event handling
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     running = False
 
-            if playIndex < len(plays) and not pause_after_play:
-                currPlay = plays[playIndex]
-                player = currPlay["player"]
-                rack = p1Rack if player == "player1" else p2Rack
+            # Draw board
+            if play_index < len(plays) and not pause_after_play:
+                curr_play = plays[play_index]
+                player = curr_play["player"]
+                rack = p1_rack if player == "player1" else p2_rack
 
-                points = currPlay["points"]
+                # Update points
+                points = curr_play["points"]
                 if player == "player1":
-                    p1Points = points
+                    p1_points = points
                 else:
-                    p2Points = points
+                    p2_points = points
 
-                # Timing for displaying tiles
+                # Time delay displaying tiles sequentially
                 if start_delay_time is None or current_time - start_delay_time >= 1000:
-                    if tile_index < len(currPlay["play"]):
-                        tile = currPlay["play"][tile_index]
+                    # Draw tiles on board
+                    if tile_index < len(curr_play["play"]):
+                        tile = curr_play["play"][tile_index]
                         tiles_on_board.append(tile)
                         # Remove tile from rack
                         for rack_tile in rack:
                             if rack_tile.value == tile.value:
                                 rack.remove(rack_tile)
                                 break
-                        board.drawGame(screen, p1Rack, p2Rack, p1Points, p2Points, tiles_on_board)
+                        board.draw_game(screen, p1_rack, p2_rack, p1_points, p2_points, tiles_on_board)
                         tile_index += 1
                         start_delay_time = current_time
                     else:
                         # Update tile counts after all tiles are placed
-                        tileCounts = {}
-                        for tile in currPlay["afterRack"]:
-                            tileCounts[tile.value] = tileCounts.get(tile.value, 0) + 1
+                        tile_counts = {}
+                        for tile in curr_play["afterRack"]:
+                            tile_counts[tile.value] = tile_counts.get(tile.value, 0) + 1
 
-                        currCounts = {}
+                        curr_counts = {}
                         for tile in rack:
-                            currCounts[tile.value] = currCounts.get(tile.value, 0) + 1
+                            curr_counts[tile.value] = curr_counts.get(tile.value, 0) + 1
 
-                        for tile in currPlay["afterRack"]:
-                            if currCounts.get(tile.value, 0) < tileCounts[tile.value]:
+                        for tile in curr_play["afterRack"]:
+                            if curr_counts.get(tile.value, 0) < tile_counts[tile.value]:
                                 rack.append(tile)
-                                currCounts[tile.value] = currCounts.get(tile.value, 0) + 1
-                                board.drawGame(screen, p1Rack, p2Rack, p1Points, p2Points, tiles_on_board)
+                                curr_counts[tile.value] = curr_counts.get(tile.value, 0) + 1
+                                board.draw_game(screen, p1_rack, p2_rack, p1_points, p2_points, tiles_on_board)
                         pause_after_play = True
                         start_delay_time = current_time
 
             elif pause_after_play and current_time - start_delay_time >= 3000:
                 # Reset for next play
-                playIndex += 1
+                play_index += 1
                 tile_index = 0
                 pause_after_play = False
                 start_delay_time = None

@@ -14,13 +14,13 @@ class EquateBoard:
     def __init__(self):
         self.board = []
    
-    def initBoard(self):
+    def init_board(self):
         for i in range(19):
             self.board.append([])
             for j in range(19):
                 self.board[i].append(None)
 
-    def generateTiles(self, tile_values, x_positions=None, y_positions=None):
+    def generate_tiles(self, tile_values, x_positions=None, y_positions=None):
         tiles = []
         for i, value in enumerate(tile_values):
             x = x_positions[i] if x_positions else None
@@ -36,30 +36,30 @@ class EquateBoard:
         }
         return unicode_to_ascii.get(value, value)
 
-    def seedPlays(self):
+    def seed_plays(self):
         with open("game.json", "r") as file:
             game_data = json.load(file)
         
         plays = []
-        playData = {}
+        play_data = {}
         for play in game_data:
             if play == game_data[0]:
-                playData = {
-                    "player1Rack": self.generateTiles(play["player1"]),
-                    "player2Rack": self.generateTiles(play["player2"]),
+                play_data = {
+                    "player1Rack": self.generate_tiles(play["player1"]),
+                    "player2Rack": self.generate_tiles(play["player2"]),
                 }
             else:
-                playData = {
+                play_data = {
                     "player": play["player"],
-                    "beforeRack": self.generateTiles(play["beforeRack"]),
-                    "afterRack": self.generateTiles(play["afterRack"]),
-                    "play": self.generateTiles(play["play"], play["xPositions"], play["yPositions"]),
+                    "beforeRack": self.generate_tiles(play["beforeRack"]),
+                    "afterRack": self.generate_tiles(play["afterRack"]),
+                    "play": self.generate_tiles(play["play"], play["xPositions"], play["yPositions"]),
                     "points": play["points"],
                 }
-            plays.append(playData)
+            plays.append(play_data)
         return plays
 
-    def drawTopInfo(self, screen, points, rack):
+    def draw_top_info(self, screen, points, rack):
         font = pygame.font.SysFont("timesnewroman", 20) 
 
         # Render text surfaces
@@ -77,7 +77,7 @@ class EquateBoard:
         for i in range(len(rack)):
             rack[i].draw(screen, 280 + i * 40, 0)
 
-    def drawBottomInfo(self, screen, points, rack):
+    def draw_bottom_info(self, screen, points, rack):
         font = pygame.font.SysFont("timesnewroman", 20)
 
         # Render text surfaces
@@ -95,7 +95,7 @@ class EquateBoard:
         for i in range(len(rack)):
             rack[i].draw(screen, 280 + i * 40, 800)
 
-    def drawBoard(self, screen, tiles):
+    def draw_board(self, screen, tiles):
                     
         board_area = pygame.Rect(0, 40, 760, 800 - 40)
         pygame.draw.rect(screen, styles.BKGD, board_area)
@@ -139,11 +139,11 @@ class EquateBoard:
 
         # Draw tiles on board that have been played
         for tile in tiles:
-            tile.draw(screen, tile.getX() * 40, tile.getY() * 40 + 40)
+            tile.draw(screen, tile.get_x() * 40, tile.get_y() * 40 + 40)
 
-    def drawGame(self, screen, p1Rack, p2Rack, p1Points, p2Points, tiles_on_board):
+    def draw_game(self, screen, p1_rack, p2_rack, p1_points, p2_points, tiles_on_board):
         screen.fill(styles.WINDOW_BKGD)
-        self.drawTopInfo(screen, p1Points, p1Rack)
-        self.drawBottomInfo(screen, p2Points, p2Rack)
-        self.drawBoard(screen, tiles_on_board)
+        self.draw_top_info(screen, p1_points, p1_rack)
+        self.draw_bottom_info(screen, p2_points, p2_rack)
+        self.draw_board(screen, tiles_on_board)
         pygame.display.flip()
