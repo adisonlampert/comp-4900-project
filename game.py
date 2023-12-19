@@ -9,7 +9,6 @@ class Game:
   def __init__(self, player1, player2):
     # Initialize game state
     self.tiles = []  # List to store bag of tiles
-    self.rounds = 0
     self.player1, self.player2 = player1, player2
     self.turn = random.choice([self.player1, self.player2])  # Randomly choose the first player
     self.opponent = None
@@ -321,24 +320,3 @@ class Game:
   
   def __str__(self):
     return f'{self.player1.get_name()} points: {self.player1.get_points()}\n{self.player2.get_name()} points: {self.player2.get_points()}\n{self.board}'
-
-
-# try:
-#   with open("game.json", "r") as file:
-#     existingGame = json.load(file)
-# except (FileNotFoundError, json.JSONDecodeError):
-#   existingGame = []
-  
-# entry = {}
-# entry["player"] = self.turn.getName()
-# entry["beforeRack"] = [r.getValue() for r in initRack]
-# entry["afterRack"] = [r.getValue() for r in self.turn.getRack()]
-# entry["play"] = [p[0].getValue() for p in play]
-# entry["xPositions"] = [p[1][0] for p in play]
-# entry["yPositions"] = [p[1][1] for p in play]
-# entry["points"] = self.turn.getPoints()
-
-# existingGame.append(entry)
-  
-# with open("game.json", "w") as file:
-#   json.dump(existingGame, file, indent=2)
